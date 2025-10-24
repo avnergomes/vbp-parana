@@ -2,7 +2,7 @@ import json
 import re
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import plotly.express as px
@@ -22,6 +22,9 @@ MAP_FILE = Path("mun_PR.json")
 PRODUCT_MAP_FILE = Path("mapa_produtos_completo.xlsx")
 PRODUCT_STANDARD_FILE = Path("padronização produtos.xlsx")
 
+# ---------------------------------------------------------------------------
+# Utilidades
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # Utilidades
@@ -77,6 +80,21 @@ def format_number(value: float) -> str:
     if abs(value) >= 1_000:
         return f"{value/1_000:.1f} mil"
     return f"{value:,.0f}".replace(",", ".")
+
+
+def sort_unique(values: Any) -> List[Any]:
+    """Retorna valores únicos ordenados tratando nulos e tipos heterogêneos."""
+
+    if isinstance(values, pd.Series):
+        clean = values.dropna()
+    else:
+        clean = pd.Series(values).dropna()
+
+    if clean.empty:
+        return []
+
+    uniques = pd.unique(clean)
+    return sorted(uniques, key=lambda item: str(item).casefold())
 
 
 COLUMN_ALIASES: Dict[str, str] = {
@@ -335,6 +353,55 @@ def load_vbp_data() -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
     data.loc[data["cod_ibge"].notna(), "cod_ibge"] = (
         data.loc[data["cod_ibge"].notna(), "cod_ibge"].astype(str).str.zfill(7)
     )
+    result["regional_idr"] = result["regional_idr"].combine_first(
+        df.get("regional_idr_origem")
+    )
+
+    return result, missing_municipios, missing_produtos
+
+
+@st.cache_data(show_spinner="Processando base histórica do VBP...")
+def load_vbp_data() -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
+    municipios, produto_catalogo = load_reference_tables()
+
+    frames: List[pd.DataFrame] = []
+    missing_municipios: set[str] = set()
+    missing_produtos: set[str] = set()
+
+    for path in sorted(DATA_DIR.glob("*.xls*")):
+        if path.name.lower() == "municipios_pr.xlsx":
+            continue
+
+        df, miss_mun, miss_prod = read_single_file(path, municipios, produto_catalogo)
+        if df.empty:
+            continue
+        frames.append(df)
+        missing_municipios.update(miss_mun)
+        missing_produtos.update(miss_prod)
+
+    if not frames:
+        return pd.DataFrame(), {"municipios": [], "produtos": []}
+
+    data = pd.concat(frames, ignore_index=True)
+    data = data.drop_duplicates()
+    data["ano"] = data["ano"].astype(int)
+    data["cod_ibge"] = data["cod_ibge"].where(data["cod_ibge"].notna())
+    data.loc[data["cod_ibge"].notna(), "cod_ibge"] = (
+        data.loc[data["cod_ibge"].notna(), "cod_ibge"].astype(str).str.zfill(7)
+    )
+
+    diagnostics = {
+        "municipios": sorted(missing_municipios),
+        "produtos": sorted(missing_produtos),
+    }
+    return data, diagnostics
+
+
+@st.cache_data(show_spinner="Carregando malha territorial...")
+def load_geojson() -> Dict:
+    with MAP_FILE.open("r", encoding="utf-8") as fp:
+        return json.load(fp)
+
 
     diagnostics = {
         "municipios": sorted(missing_municipios),
@@ -358,7 +425,7 @@ if data.empty:
     st.error("Nenhum arquivo válido encontrado na pasta data/.")
     st.stop()
 
-anos_disponiveis = sorted(data["ano"].unique())
+anos_disponiveis = sort_unique(data["ano"])
 min_year, max_year = int(min(anos_disponiveis)), int(max(anos_disponiveis))
 
 st.sidebar.header("🎯 Filtros analíticos")
@@ -369,11 +436,11 @@ year_range = st.sidebar.slider(
     value=(min_year, max_year),
 )
 
-mesos = sorted(data["meso_idr"].dropna().unique())
-regional_options = sorted(data["regional_idr"].dropna().unique())
-cadeias = sorted(data["cadeia"].dropna().unique())
-subcadeias = sorted(data["subcadeia"].dropna().unique())
-produtos = sorted(data["produto_conciso"].dropna().unique())
+mesos = sort_unique(data["meso_idr"])
+regional_options = sort_unique(data["regional_idr"])
+cadeias = sort_unique(data["cadeia"])
+subcadeias = sort_unique(data["subcadeia"])
+produtos = sort_unique(data["produto_conciso"])
 
 selected_mesos = st.sidebar.multiselect(
     "Mesorregião IDR",
@@ -394,11 +461,10 @@ selected_cadeias = st.sidebar.multiselect(
 )
 
 filtered_subcadeias = (
-    data[data["cadeia"].isin(selected_cadeias)]["subcadeia"].dropna().unique()
+    sort_unique(data[data["cadeia"].isin(selected_cadeias)]["subcadeia"])
     if selected_cadeias
     else subcadeias
 )
-filtered_subcadeias = sorted(filtered_subcadeias)
 selected_subcadeias = st.sidebar.multiselect(
     "Subcadeia",
     options=filtered_subcadeias,
@@ -412,7 +478,7 @@ elif selected_cadeias:
 else:
     produto_base = data
 
-filtered_produtos = sorted(produto_base["produto_conciso"].dropna().unique())
+filtered_produtos = sort_unique(produto_base["produto_conciso"])
 selected_produtos = st.sidebar.multiselect(
     "Produto",
     options=filtered_produtos,
