@@ -30,6 +30,27 @@ PRODUCT_STANDARD_FILE = Path("padronização produtos.xlsx")
 # Utilidades
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Observabilidade de arquivos de dados
+# ---------------------------------------------------------------------------
+
+
+def build_data_manifest() -> List[Tuple[str, int, int]]:
+    """Lista arquivos de dados com metadados para controle de cache."""
+
+    manifest: List[Tuple[str, int, int]] = []
+    for path in sorted(DATA_DIR.glob("*.xls*")):
+        if path.name.lower() == "municipios_pr.xlsx":
+            continue
+        stat = path.stat()
+        manifest.append((path.name, int(stat.st_mtime_ns), stat.st_size))
+    return manifest
+
+
+# ---------------------------------------------------------------------------
+# Utilidades
+# ---------------------------------------------------------------------------
+
 def normalize_column(name: str) -> str:
     """Padroniza nomes de colunas removendo acentos e caracteres especiais."""
     text = unicodedata.normalize("NFKD", str(name))
@@ -325,15 +346,18 @@ def read_single_file(
 
 
 @st.cache_data(show_spinner="Processando base histórica do VBP...")
-def load_vbp_data() -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
+def load_vbp_data(
+    manifest: List[Tuple[str, int, int]]
+) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
     municipios, produto_catalogo = load_reference_tables()
 
     frames: List[pd.DataFrame] = []
     missing_municipios: set[str] = set()
     missing_produtos: set[str] = set()
 
-    for path in sorted(DATA_DIR.glob("*.xls*")):
-        if path.name.lower() == "municipios_pr.xlsx":
+    for file_name, _, _ in manifest:
+        path = DATA_DIR / file_name
+        if not path.exists():
             continue
 
         df, miss_mun, miss_prod = read_single_file(path, municipios, produto_catalogo)
@@ -371,7 +395,8 @@ def load_geojson() -> Dict:
 # Carrega e valida dados
 # ---------------------------------------------------------------------------
 
-data, diagnostics = load_vbp_data()
+manifest = build_data_manifest()
+data, diagnostics = load_vbp_data(manifest)
 if data.empty:
     st.error("Nenhum arquivo válido encontrado na pasta data/.")
     st.stop()
@@ -527,7 +552,12 @@ with tab_overview:
         title="Valor bruto da produção (R$)",
     )
     valor_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
-    valor_fig.update_traces(hovertemplate="Ano %{x}<br>Valor %{y:,.0f}<extra></extra>")
+    valor_fig.update_traces(
+        hovertemplate="Ano %{x}<br>Valor %{y:,.0f}<extra></extra>",
+        mode="lines+markers+text",
+        text=[format_number(v) for v in time_series["valor"]],
+        textposition="top center",
+    )
     st.plotly_chart(valor_fig, use_container_width=True)
 
     col_a, col_b = st.columns(2)
@@ -540,7 +570,12 @@ with tab_overview:
             title="Área cultivada (ha)",
         )
         area_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
-        area_fig.update_traces(hovertemplate="Ano %{x}<br>Área %{y:,.0f}<extra></extra>")
+        area_fig.update_traces(
+            hovertemplate="Ano %{x}<br>Área %{y:,.0f}<extra></extra>",
+            mode="lines+markers+text",
+            text=[format_number(v) for v in time_series["area"]],
+            textposition="top center",
+        )
         st.plotly_chart(area_fig, use_container_width=True)
 
     with col_b:
@@ -552,7 +587,12 @@ with tab_overview:
             title="Quantidade produzida",
         )
         prod_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
-        prod_fig.update_traces(hovertemplate="Ano %{x}<br>Quantidade %{y:,.0f}<extra></extra>")
+        prod_fig.update_traces(
+            hovertemplate="Ano %{x}<br>Quantidade %{y:,.0f}<extra></extra>",
+            mode="lines+markers+text",
+            text=[format_number(v) for v in time_series["producao"]],
+            textposition="top center",
+        )
         st.plotly_chart(prod_fig, use_container_width=True)
 
     st.subheader("Participação das principais cadeias no período selecionado")
@@ -566,7 +606,12 @@ with tab_overview:
         title="Valor bruto da produção por cadeia",
         text_auto=".2s",
     )
-    cadeias_fig.update_layout(xaxis_title="Cadeia", yaxis_title="Valor (R$)", margin=dict(l=10, r=10, t=60, b=10))
+    cadeias_fig.update_layout(
+        xaxis_title="Cadeia",
+        yaxis_title="Valor (R$)",
+        margin=dict(l=10, r=10, t=60, b=10),
+    )
+    cadeias_fig.update_traces(textposition="outside")
     st.plotly_chart(cadeias_fig, use_container_width=True)
 
 
@@ -605,6 +650,7 @@ with tab_cadeias:
         legend_title="Cadeia",
         barmode="stack",
     )
+    cadeia_region_fig.update_traces(textposition="inside")
     st.plotly_chart(cadeia_region_fig, use_container_width=True)
 
 
@@ -631,6 +677,7 @@ with tab_produtos:
         margin=dict(l=10, r=10, t=60, b=10),
         legend_title="Regional IDR",
     )
+    top_prod_fig.update_traces(textposition="outside")
     st.plotly_chart(top_prod_fig, use_container_width=True)
 
     st.subheader("Tabela analítica de produtos")
