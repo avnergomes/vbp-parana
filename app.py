@@ -121,19 +121,47 @@ if "cadeia" in data.columns:
     cad_sel = st.sidebar.multiselect("Cadeia", cadeias, default=cadeias)
 else:
     cad_sel = []
+if "subcadeia" in data.columns:
+    subcadeias = sorted(data["subcadeia"].dropna().unique())
+    subcad_sel = st.sidebar.multiselect(
+        "Subcadeia", subcadeias, default=subcadeias
+    )
+else:
+    subcad_sel = []
+if "produto" in data.columns:
+    produtos = sorted(data["produto"].dropna().unique())
+    prod_sel = st.sidebar.multiselect("Produto", produtos, default=produtos)
+else:
+    prod_sel = []
 
 filt = (data["ano"].isin(ano_sel))
 if reg_sel:
     filt &= data["regional_idr"].isin(reg_sel)
 if cad_sel:
     filt &= data["cadeia"].isin(cad_sel)
+if subcad_sel:
+    filt &= data["subcadeia"].isin(subcad_sel)
+if prod_sel:
+    filt &= data["produto"].isin(prod_sel)
 
 df = data[filt]
 
 st.subheader("Séries Históricas de Valor (VBP)")
 if "valor" in df.columns and "ano" in df.columns:
     vbps = df.groupby("ano")["valor"].sum().reset_index()
-    fig = px.line(vbps, x="ano", y="valor", title="Evolução do Valor Bruto da Produção")
+    vbps["label"] = vbps["valor"].map(lambda v: f"R$ {v:,.0f}".replace(",", "."))
+    fig = px.line(
+        vbps,
+        x="ano",
+        y="valor",
+        title="Evolução do Valor Bruto da Produção",
+    )
+    fig.update_traces(
+        mode="lines+markers+text",
+        text=vbps["label"],
+        textposition="top center",
+        hovertemplate="Ano: %{x}<br>Valor: %{text}<extra></extra>",
+    )
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Colunas 'valor' e 'ano' necessárias para série histórica.")
