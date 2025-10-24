@@ -353,55 +353,6 @@ def load_vbp_data() -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
     data.loc[data["cod_ibge"].notna(), "cod_ibge"] = (
         data.loc[data["cod_ibge"].notna(), "cod_ibge"].astype(str).str.zfill(7)
     )
-    result["regional_idr"] = result["regional_idr"].combine_first(
-        df.get("regional_idr_origem")
-    )
-
-    return result, missing_municipios, missing_produtos
-
-
-@st.cache_data(show_spinner="Processando base histórica do VBP...")
-def load_vbp_data() -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
-    municipios, produto_catalogo = load_reference_tables()
-
-    frames: List[pd.DataFrame] = []
-    missing_municipios: set[str] = set()
-    missing_produtos: set[str] = set()
-
-    for path in sorted(DATA_DIR.glob("*.xls*")):
-        if path.name.lower() == "municipios_pr.xlsx":
-            continue
-
-        df, miss_mun, miss_prod = read_single_file(path, municipios, produto_catalogo)
-        if df.empty:
-            continue
-        frames.append(df)
-        missing_municipios.update(miss_mun)
-        missing_produtos.update(miss_prod)
-
-    if not frames:
-        return pd.DataFrame(), {"municipios": [], "produtos": []}
-
-    data = pd.concat(frames, ignore_index=True)
-    data = data.drop_duplicates()
-    data["ano"] = data["ano"].astype(int)
-    data["cod_ibge"] = data["cod_ibge"].where(data["cod_ibge"].notna())
-    data.loc[data["cod_ibge"].notna(), "cod_ibge"] = (
-        data.loc[data["cod_ibge"].notna(), "cod_ibge"].astype(str).str.zfill(7)
-    )
-
-    diagnostics = {
-        "municipios": sorted(missing_municipios),
-        "produtos": sorted(missing_produtos),
-    }
-    return data, diagnostics
-
-
-@st.cache_data(show_spinner="Carregando malha territorial...")
-def load_geojson() -> Dict:
-    with MAP_FILE.open("r", encoding="utf-8") as fp:
-        return json.load(fp)
-
 
     diagnostics = {
         "municipios": sorted(missing_municipios),
@@ -708,9 +659,10 @@ with tab_produtos:
 with tab_mapa:
     st.subheader("Mapa temático por município")
     geojson = load_geojson()
+    mapa_metrics = ["valor", "producao", "area"]
     mapa_base = (
         filtered_df.groupby(["cod_ibge", "municipio_oficial", "regional_idr"])[
-            [map_metric, "valor", "producao", "area"]
+            mapa_metrics
         ]
         .sum()
         .reset_index()
