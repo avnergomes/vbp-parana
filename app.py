@@ -69,6 +69,7 @@ def normalize_text(value: str) -> str:
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
     text = re.sub(r"[^0-9a-zA-Z ]+", " ", text)
     text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\b(\d+)[ao]\b", r"\1", text)
     return text.strip().lower()
 
 
@@ -88,19 +89,37 @@ def coerce_year(series: pd.Series) -> pd.Series:
 
 
 def format_currency(value: float) -> str:
-    if pd.isna(value):
-        return "-"
-    return f"R$ {value:,.0f}".replace(",", ".")
+    return _format_compact_value(value, currency=True)
 
 
 def format_number(value: float) -> str:
+    return _format_compact_value(value)
+
+
+def _format_compact_value(value: float, *, currency: bool = False) -> str:
     if pd.isna(value):
         return "-"
-    if abs(value) >= 1_000_000:
-        return f"{value/1_000_000:.1f} mi"
-    if abs(value) >= 1_000:
-        return f"{value/1_000:.1f} mil"
-    return f"{value:,.0f}".replace(",", ".")
+
+    sign = "-" if value < 0 else ""
+    abs_value = abs(value)
+    thresholds = [
+        (1_000_000_000_000, " tri"),
+        (1_000_000_000, " bi"),
+        (1_000_000, " mi"),
+        (1_000, " mil"),
+    ]
+
+    for threshold, suffix in thresholds:
+        if abs_value >= threshold:
+            scaled = abs_value / threshold
+            formatted = f"{scaled:.1f}".rstrip("0").rstrip(".")
+            formatted = formatted.replace(".", ",")
+            prefix = "R$ " if currency else ""
+            return f"{sign}{prefix}{formatted}{suffix}"
+
+    formatted = f"{abs_value:,.0f}".replace(",", ".")
+    prefix = "R$ " if currency else ""
+    return f"{sign}{prefix}{formatted}"
 
 
 def sort_unique(values: Any) -> List[Any]:
@@ -152,6 +171,106 @@ COLUMN_ALIASES: Dict[str, str] = {
     "valor_reais": "valor",
     "vbp": "valor",
 }
+
+
+MUNICIPIO_ALIASES: Dict[str, str] = {
+    normalize_text("Santa Terezinha do Itaipu"): normalize_text(
+        "Santa Terezinha de Itaipu"
+    ),
+    normalize_text("Itapejara do Oeste"): normalize_text("Itapejara d'Oeste"),
+    normalize_text("Rancho Alegre do Oeste"): normalize_text("Rancho Alegre d'Oeste"),
+    normalize_text("Sao Jorge do Oeste"): normalize_text("São Jorge d'Oeste"),
+    normalize_text("Saudades do Iguacu"): normalize_text("Saudade do Iguaçu"),
+    normalize_text("Perola do Oeste"): normalize_text("Pérola d'Oeste"),
+    normalize_text("Santa Izabel do Ivai"): normalize_text("Santa Isabel do Ivaí"),
+    normalize_text("Arapuan"): normalize_text("Arapuã"),
+    normalize_text("Santa Cruz do Monte Castelo"): normalize_text(
+        "Santa Cruz de Monte Castelo"
+    ),
+}
+
+
+PRODUCT_ALIASES: Dict[str, str] = {
+    normalize_text("Alho Porro"): normalize_text("Alho Poro"),
+    normalize_text("Arroz de Sequeiro"): normalize_text("Arroz Sequeiro"),
+    normalize_text("Brocolos"): normalize_text("Brócolis"),
+    normalize_text("Caranguejo"): normalize_text("Carangueijo"),
+    normalize_text("Milho Safra Normal"): normalize_text("Milho 1 Safra"),
+    normalize_text("Milho Safrinha"): normalize_text("Milho 2 Safra"),
+    normalize_text("Soja Safra Normal"): normalize_text("Soja 1 Safra"),
+    normalize_text("Soja Safrinha"): normalize_text("Soja 2 Safra"),
+    normalize_text("Amendoim Safra das Aguas"): normalize_text("Amendoim 1 Safra"),
+}
+
+
+PRODUCT_SUPPLEMENTS: List[Dict[str, str]] = [
+    {
+        "produto_norm": normalize_text("Algodão (Pluma)"),
+        "produto_conciso": "ALGODÃO (PLUMA)",
+        "cadeia": "ALGODÃO",
+        "subcadeia": "ALGODÃO",
+    },
+    {
+        "produto_norm": normalize_text("Amendoim 1 Safra"),
+        "produto_conciso": "AMENDOIM (1ª SAFRA)",
+        "cadeia": "GRÃOS",
+        "subcadeia": "AMENDOIM",
+    },
+    {
+        "produto_norm": normalize_text("Batata da Seca"),
+        "produto_conciso": "BATATA DA SECA",
+        "cadeia": "OLERICULTURA",
+        "subcadeia": "TUBERCULOS",
+    },
+    {
+        "produto_norm": normalize_text("Batata das Aguas"),
+        "produto_conciso": "BATATA DAS ÁGUAS",
+        "cadeia": "OLERICULTURA",
+        "subcadeia": "TUBERCULOS",
+    },
+    {
+        "produto_norm": normalize_text("Feijao Safra das Aguas"),
+        "produto_conciso": "FEIJÃO SAFRA DAS ÁGUAS",
+        "cadeia": "GRÃOS",
+        "subcadeia": "FEIJÃO",
+    },
+    {
+        "produto_norm": normalize_text("Feijao Safra da Seca"),
+        "produto_conciso": "FEIJÃO SAFRA DA SECA",
+        "cadeia": "GRÃOS",
+        "subcadeia": "FEIJÃO",
+    },
+    {
+        "produto_norm": normalize_text("Feijao Safra de Inverno"),
+        "produto_conciso": "FEIJÃO SAFRA DE INVERNO",
+        "cadeia": "GRÃOS",
+        "subcadeia": "FEIJÃO",
+    },
+    {
+        "produto_norm": normalize_text("Aveia Preta"),
+        "produto_conciso": "AVEIA PRETA (GRÃO)",
+        "cadeia": "GRÃOS",
+        "subcadeia": "MALTES",
+    },
+    {
+        "produto_norm": normalize_text("Mandioca Industria Consumo Animal"),
+        "produto_conciso": "MANDIOCA INDÚSTRIA/CONSUMO ANIMAL",
+        "cadeia": "OLERICULTURA",
+        "subcadeia": "TUBERCULOS",
+    },
+    {
+        "produto_norm": normalize_text("Mata Nativa"),
+        "produto_conciso": "MATA NATIVA",
+        "cadeia": "FLORESTAL",
+        "subcadeia": "FLORESTA NATIVA",
+    },
+    {
+        "produto_norm": normalize_text("Sorgo"),
+        "produto_conciso": "SORGO (GRANÍFERO)",
+        "cadeia": "GRÃOS",
+        "subcadeia": "MALTES",
+    },
+]
 
 
 # ---------------------------------------------------------------------------
@@ -213,8 +332,39 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame]:
         ignore_index=True,
     )
     produto_catalogo = produto_catalogo.dropna(subset=["produto_norm"])
-    produto_catalogo = produto_catalogo.sort_values("produto_conciso")
+    produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].apply(
+        normalize_text
+    )
+    produto_catalogo["placeholder"] = produto_catalogo["produto_conciso"].fillna("").str.contains(
+        r"\*"
+    )
+    produto_catalogo = produto_catalogo.sort_values(
+        ["produto_norm", "placeholder", "produto_conciso"]
+    )
     produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
+    produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
+
+    if PRODUCT_ALIASES:
+        produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].replace(
+            PRODUCT_ALIASES
+        )
+
+    if PRODUCT_SUPPLEMENTS:
+        suplemento_df = pd.DataFrame(PRODUCT_SUPPLEMENTS)
+        produto_catalogo = pd.concat([produto_catalogo, suplemento_df], ignore_index=True)
+
+    produto_catalogo = produto_catalogo.dropna(subset=["produto_norm"])
+    produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].apply(
+        normalize_text
+    )
+    produto_catalogo["placeholder"] = produto_catalogo["produto_conciso"].fillna("").str.contains(
+        r"\*"
+    )
+    produto_catalogo = produto_catalogo.sort_values(
+        ["produto_norm", "placeholder", "produto_conciso"]
+    )
+    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
+    produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
 
     return municipios, produto_catalogo
 
@@ -236,10 +386,22 @@ def enrich_with_catalogues(
     municipios: pd.DataFrame,
     produto_catalogo: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, List[str], List[str]]:
+    municipio_lookup = municipios.set_index("municipio_norm")[
+        "municipio_oficial"
+    ]
     df["municipio_norm"] = df["municipio"].apply(normalize_text)
+    if MUNICIPIO_ALIASES:
+        df["municipio_norm"] = df["municipio_norm"].replace(MUNICIPIO_ALIASES)
+        alias_targets = set(MUNICIPIO_ALIASES.values())
+        alias_mask = df["municipio_norm"].isin(alias_targets)
+        df.loc[alias_mask, "municipio"] = df.loc[alias_mask, "municipio_norm"].map(
+            municipio_lookup
+        ).fillna(df.loc[alias_mask, "municipio"])
+    df["produto_norm"] = df["produto"].apply(normalize_text)
+    if PRODUCT_ALIASES:
+        df["produto_norm"] = df["produto_norm"].replace(PRODUCT_ALIASES)
     merged = df.merge(municipios, on="municipio_norm", how="left")
 
-    merged["produto_norm"] = merged["produto"].apply(normalize_text)
     merged = merged.merge(produto_catalogo, on="produto_norm", how="left")
 
     merged["produto_conciso"] = merged["produto_conciso"].fillna(merged["produto"])
@@ -543,6 +705,9 @@ with tab_overview:
         .reset_index()
         .sort_values("ano")
     )
+    time_series["valor_formatado"] = time_series["valor"].apply(format_currency)
+    time_series["area_formatada"] = time_series["area"].apply(format_number)
+    time_series["producao_formatada"] = time_series["producao"].apply(format_number)
 
     valor_fig = px.line(
         time_series,
@@ -550,12 +715,13 @@ with tab_overview:
         y="valor",
         markers=True,
         title="Valor bruto da produção (R$)",
+        custom_data=["valor_formatado"],
     )
     valor_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
     valor_fig.update_traces(
-        hovertemplate="Ano %{x}<br>Valor %{y:,.0f}<extra></extra>",
+        hovertemplate="Ano %{x}<br>Valor %{customdata[0]}<extra></extra>",
         mode="lines+markers+text",
-        text=[format_number(v) for v in time_series["valor"]],
+        text=time_series["valor_formatado"],
         textposition="top center",
     )
     st.plotly_chart(valor_fig, use_container_width=True)
@@ -568,12 +734,13 @@ with tab_overview:
             y="area",
             markers=True,
             title="Área cultivada (ha)",
+            custom_data=["area_formatada"],
         )
         area_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
         area_fig.update_traces(
-            hovertemplate="Ano %{x}<br>Área %{y:,.0f}<extra></extra>",
+            hovertemplate="Ano %{x}<br>Área %{customdata[0]}<extra></extra>",
             mode="lines+markers+text",
-            text=[format_number(v) for v in time_series["area"]],
+            text=time_series["area_formatada"],
             textposition="top center",
         )
         st.plotly_chart(area_fig, use_container_width=True)
@@ -585,12 +752,13 @@ with tab_overview:
             y="producao",
             markers=True,
             title="Quantidade produzida",
+            custom_data=["producao_formatada"],
         )
         prod_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
         prod_fig.update_traces(
-            hovertemplate="Ano %{x}<br>Quantidade %{y:,.0f}<extra></extra>",
+            hovertemplate="Ano %{x}<br>Quantidade %{customdata[0]}<extra></extra>",
             mode="lines+markers+text",
-            text=[format_number(v) for v in time_series["producao"]],
+            text=time_series["producao_formatada"],
             textposition="top center",
         )
         st.plotly_chart(prod_fig, use_container_width=True)
@@ -599,19 +767,24 @@ with tab_overview:
     cadeias_agg = (
         filtered_df.groupby("cadeia")["valor"].sum().reset_index().sort_values("valor", ascending=False)
     )
+    cadeias_agg["valor_formatado"] = cadeias_agg["valor"].apply(format_currency)
     cadeias_fig = px.bar(
         cadeias_agg,
         x="cadeia",
         y="valor",
         title="Valor bruto da produção por cadeia",
-        text_auto=".2s",
+        custom_data=["valor_formatado"],
+        text="valor_formatado",
     )
     cadeias_fig.update_layout(
         xaxis_title="Cadeia",
         yaxis_title="Valor (R$)",
         margin=dict(l=10, r=10, t=60, b=10),
     )
-    cadeias_fig.update_traces(textposition="outside")
+    cadeias_fig.update_traces(
+        textposition="outside",
+        hovertemplate="Cadeia %{x}<br>Valor %{customdata[0]}<extra></extra>",
+    )
     st.plotly_chart(cadeias_fig, use_container_width=True)
 
 
@@ -620,14 +793,19 @@ with tab_cadeias:
     hierarchy = (
         filtered_df.groupby(["cadeia", "subcadeia", "produto_conciso"])["valor"].sum().reset_index()
     )
+    hierarchy["valor_formatado"] = hierarchy["valor"].apply(format_currency)
     sunburst_fig = px.sunburst(
         hierarchy,
         path=["cadeia", "subcadeia", "produto_conciso"],
         values="valor",
         color="cadeia",
         title="Distribuição de valor por cadeia, subcadeia e produto",
+        custom_data=["valor_formatado"],
     )
     sunburst_fig.update_layout(margin=dict(l=0, r=0, t=60, b=0))
+    sunburst_fig.update_traces(
+        hovertemplate="<b>%{label}</b><br>Valor %{customdata[0]}<extra></extra>"
+    )
     st.plotly_chart(sunburst_fig, use_container_width=True)
 
     st.subheader("Cadeia por regional IDR")
@@ -635,13 +813,15 @@ with tab_cadeias:
         filtered_df.groupby(["regional_idr", "cadeia"])["valor"].sum().reset_index()
     )
     cadeia_regional = cadeia_regional.sort_values("valor", ascending=False)
+    cadeia_regional["valor_formatado"] = cadeia_regional["valor"].apply(format_currency)
     cadeia_region_fig = px.bar(
         cadeia_regional,
         x="regional_idr",
         y="valor",
         color="cadeia",
         title="Distribuição do valor por cadeia e regional",
-        text_auto=".2s",
+        custom_data=["valor_formatado"],
+        text="valor_formatado",
     )
     cadeia_region_fig.update_layout(
         xaxis_title="Regional IDR",
@@ -650,7 +830,10 @@ with tab_cadeias:
         legend_title="Cadeia",
         barmode="stack",
     )
-    cadeia_region_fig.update_traces(textposition="inside")
+    cadeia_region_fig.update_traces(
+        textposition="inside",
+        hovertemplate="Regional %{x}<br>Cadeia %{fullData.name}<br>Valor %{customdata[0]}<extra></extra>",
+    )
     st.plotly_chart(cadeia_region_fig, use_container_width=True)
 
 
@@ -662,6 +845,7 @@ with tab_produtos:
     top_prod = (
         prod_regional.sort_values("valor", ascending=False).groupby("regional_idr").head(5)
     )
+    top_prod["valor_formatado"] = top_prod["valor"].apply(format_currency)
     top_prod_fig = px.bar(
         top_prod,
         x="valor",
@@ -669,7 +853,8 @@ with tab_produtos:
         color="regional_idr",
         orientation="h",
         title="Top 5 produtos por regional (valor)",
-        text_auto=".2s",
+        custom_data=["valor_formatado"],
+        text="valor_formatado",
     )
     top_prod_fig.update_layout(
         xaxis_title="Valor (R$)",
@@ -677,7 +862,10 @@ with tab_produtos:
         margin=dict(l=10, r=10, t=60, b=10),
         legend_title="Regional IDR",
     )
-    top_prod_fig.update_traces(textposition="outside")
+    top_prod_fig.update_traces(
+        textposition="outside",
+        hovertemplate="Regional %{fullData.name}<br>Produto %{y}<br>Valor %{customdata[0]}<extra></extra>",
+    )
     st.plotly_chart(top_prod_fig, use_container_width=True)
 
     st.subheader("Tabela analítica de produtos")
@@ -691,14 +879,21 @@ with tab_produtos:
         .reset_index()
         .sort_values("valor_total", ascending=False)
     )
+    produto_tabela_display = produto_tabela.assign(
+        valor=produto_tabela["valor_total"].apply(format_currency),
+        quantidade=produto_tabela["quantidade_total"].apply(format_number),
+        area=produto_tabela["area_total"].apply(format_number),
+    )
     st.dataframe(
-        produto_tabela,
-        use_container_width=True,
+        produto_tabela_display[
+            ["produto_conciso", "unidade", "valor", "quantidade", "area"]
+        ],
+        width="stretch",
         hide_index=True,
         column_config={
-            "valor_total": st.column_config.NumberColumn("Valor (R$)", format="%0.0f"),
-            "quantidade_total": st.column_config.NumberColumn("Quantidade", format="%0.0f"),
-            "area_total": st.column_config.NumberColumn("Área (ha)", format="%0.0f"),
+            "valor": st.column_config.Column("Valor (R$)"),
+            "quantidade": st.column_config.Column("Quantidade"),
+            "area": st.column_config.Column("Área (ha)"),
         },
     )
 
@@ -715,6 +910,9 @@ with tab_mapa:
         .reset_index()
     )
     mapa_base = mapa_base[mapa_base[map_metric].notna()]
+    mapa_base["valor_formatado"] = mapa_base["valor"].apply(format_currency)
+    mapa_base["producao_formatada"] = mapa_base["producao"].apply(format_number)
+    mapa_base["area_formatada"] = mapa_base["area"].apply(format_number)
 
     if mapa_base.empty:
         st.info("Sem dados para exibir no mapa com os filtros atuais.")
@@ -729,9 +927,12 @@ with tab_mapa:
             hover_data={
                 "municipio_oficial": True,
                 "regional_idr": True,
-                "valor": True,
-                "producao": True,
-                "area": True,
+                "valor_formatado": True,
+                "producao_formatada": True,
+                "area_formatada": True,
+                "valor": False,
+                "producao": False,
+                "area": False,
             },
             color_continuous_scale="Viridis",
             mapbox_style="carto-positron",
