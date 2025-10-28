@@ -341,7 +341,7 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame]:
     produto_catalogo = produto_catalogo.sort_values(
         ["produto_norm", "placeholder", "produto_conciso"]
     )
-    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
+    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="last")
     produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
 
     if PRODUCT_ALIASES:
@@ -363,7 +363,7 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame]:
     produto_catalogo = produto_catalogo.sort_values(
         ["produto_norm", "placeholder", "produto_conciso"]
     )
-    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
+    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="last")
     produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
 
     return municipios, produto_catalogo
