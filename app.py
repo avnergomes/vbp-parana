@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 st.set_page_config(
@@ -15,7 +16,219 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Custom CSS for enhanced visual design
+st.markdown("""
+<style>
+    /* Main theme colors */
+    :root {
+        --primary-color: #2E7D32;
+        --secondary-color: #66BB6A;
+        --accent-color: #FFA726;
+        --background-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Main title styling */
+    h1 {
+        background: linear-gradient(135deg, #2E7D32 0%, #66BB6A 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700 !important;
+        padding: 1rem 0;
+        font-size: 2.5rem !important;
+    }
+
+    /* Subheader styling */
+    h2, h3 {
+        color: #2E7D32;
+        font-weight: 600 !important;
+        margin-top: 2rem !important;
+        margin-bottom: 1rem !important;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #66BB6A;
+    }
+
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    [data-testid="stSidebar"] > div:first-child {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    /* Sidebar header */
+    [data-testid="stSidebar"] h2 {
+        background: linear-gradient(135deg, #2E7D32 0%, #66BB6A 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 600 !important;
+        border-bottom: 2px solid #66BB6A;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Metric container styling */
+    [data-testid="stMetric"] {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #2E7D32;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    [data-testid="stMetric"] label {
+        color: #2E7D32 !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: #1B5E20 !important;
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+    }
+
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 10px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: white;
+        border-radius: 8px;
+        color: #2E7D32;
+        font-weight: 600;
+        padding: 0 24px;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #e8f5e9;
+        border-color: #66BB6A;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #2E7D32 0%, #66BB6A 100%) !important;
+        color: white !important;
+        border-color: #2E7D32 !important;
+    }
+
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        border-left: 4px solid #FFA726;
+        font-weight: 600;
+        color: #2E7D32;
+    }
+
+    .streamlit-expanderHeader:hover {
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #2E7D32 0%, #66BB6A 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Selectbox and multiselect styling */
+    .stSelectbox [data-baseweb="select"] > div,
+    .stMultiSelect [data-baseweb="select"] > div {
+        border-radius: 8px;
+        border-color: #66BB6A;
+    }
+
+    /* Slider styling */
+    .stSlider > div > div > div {
+        background: linear-gradient(90deg, #2E7D32 0%, #66BB6A 100%);
+    }
+
+    /* Dataframe styling */
+    [data-testid="stDataFrame"] {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Chart container */
+    .js-plotly-plot {
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: white;
+        padding: 1rem;
+    }
+
+    /* Info/warning boxes */
+    .stAlert {
+        border-radius: 8px;
+        border-left: 4px solid #FFA726;
+    }
+
+    /* Section divider */
+    .section-divider {
+        height: 3px;
+        background: linear-gradient(90deg, #2E7D32 0%, #66BB6A 50%, transparent 100%);
+        margin: 2rem 0;
+        border-radius: 2px;
+    }
+
+    /* Caption styling */
+    .stCaptionContainer {
+        color: #666;
+        font-style: italic;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid #66BB6A;
+        margin-top: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📊 VBP Paraná — Inteligência Territorial da Produção")
+
+# Introduction section
+st.markdown("""
+<div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 6px solid #2E7D32;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h3 style="color: #1B5E20; margin-top: 0; font-size: 1.3rem;">
+        🌱 Bem-vindo ao Sistema de Inteligência Territorial da Produção
+    </h3>
+    <p style="color: #2E7D32; font-size: 1rem; line-height: 1.6; margin-bottom: 0;">
+        Esta plataforma oferece análises detalhadas do <b>Valor Bruto da Produção (VBP)</b> do estado do Paraná,
+        permitindo explorar dados por município, regional, cadeia produtiva e produto.
+        Utilize os filtros na barra lateral para personalizar sua análise e descobrir insights territoriais.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 DATA_DIR = Path("data")
 MAP_FILE = Path("mun_PR.json")
@@ -684,16 +897,20 @@ with st.expander("ℹ️ Diagnósticos de cobertura", expanded=False):
 # Visão geral e métricas
 # ---------------------------------------------------------------------------
 
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
 col1, col2, col3 = st.columns(3)
 with col1:
     total_valor = filtered_df["valor"].sum()
-    st.metric("Valor bruto da produção", format_currency(total_valor))
+    st.metric("💰 Valor bruto da produção", format_currency(total_valor))
 with col2:
     total_producao = filtered_df["producao"].sum()
-    st.metric("Produção total", format_number(total_producao))
+    st.metric("📦 Produção total", format_number(total_producao))
 with col3:
     total_area = filtered_df["area"].sum()
-    st.metric("Área cultivada", format_number(total_area))
+    st.metric("🌾 Área cultivada (ha)", format_number(total_area))
+
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -701,11 +918,11 @@ with col3:
 # ---------------------------------------------------------------------------
 
 tab_overview, tab_cadeias, tab_produtos, tab_mapa = st.tabs(
-    ["Visão geral", "Cadeias", "Produtos", "Mapa"]
+    ["📈 Visão Geral", "🔗 Cadeias Produtivas", "🏆 Produtos", "🗺️ Mapa Territorial"]
 )
 
 with tab_overview:
-    st.subheader("Evolução temporal das principais variáveis")
+    st.subheader("📈 Evolução temporal das principais variáveis")
     time_series = (
         filtered_df.groupby("ano")[list(metric_map.keys())]
         .sum()
@@ -721,16 +938,27 @@ with tab_overview:
         x="ano",
         y="valor",
         markers=True,
-        title="Valor bruto da produção (R$)",
+        title="💰 Valor bruto da produção (R$)",
         custom_data=["valor_formatado"],
     )
-    valor_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
+    valor_fig.update_layout(
+        margin=dict(l=10, r=10, t=60, b=10),
+        title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+        plot_bgcolor='rgba(248, 249, 250, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12, color="#333"),
+    )
     valor_fig.update_traces(
-        hovertemplate="Ano %{x}<br>Valor %{customdata[0]}<extra></extra>",
+        hovertemplate="<b>Ano %{x}</b><br>Valor: %{customdata[0]}<extra></extra>",
         mode="lines+markers+text",
         text=time_series["valor_formatado"],
         textposition="top center",
+        line=dict(color="#2E7D32", width=3),
+        marker=dict(size=10, color="#66BB6A", line=dict(color="#2E7D32", width=2)),
+        textfont=dict(size=10, color="#2E7D32", family="Arial, sans-serif"),
     )
+    valor_fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
+    valor_fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
     st.plotly_chart(valor_fig, use_container_width=True)
 
     col_a, col_b = st.columns(2)
@@ -740,16 +968,27 @@ with tab_overview:
             x="ano",
             y="area",
             markers=True,
-            title="Área cultivada (ha)",
+            title="🌾 Área cultivada (ha)",
             custom_data=["area_formatada"],
         )
-        area_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
+        area_fig.update_layout(
+            margin=dict(l=10, r=10, t=60, b=10),
+            title_font=dict(size=18, color="#2E7D32", family="Arial, sans-serif"),
+            plot_bgcolor='rgba(248, 249, 250, 0.5)',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12, color="#333"),
+        )
         area_fig.update_traces(
-            hovertemplate="Ano %{x}<br>Área %{customdata[0]}<extra></extra>",
+            hovertemplate="<b>Ano %{x}</b><br>Área: %{customdata[0]}<extra></extra>",
             mode="lines+markers+text",
             text=time_series["area_formatada"],
             textposition="top center",
+            line=dict(color="#8E24AA", width=3),
+            marker=dict(size=10, color="#BA68C8", line=dict(color="#8E24AA", width=2)),
+            textfont=dict(size=9, color="#8E24AA", family="Arial, sans-serif"),
         )
+        area_fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
+        area_fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
         st.plotly_chart(area_fig, use_container_width=True)
 
     with col_b:
@@ -758,19 +997,30 @@ with tab_overview:
             x="ano",
             y="producao",
             markers=True,
-            title="Quantidade produzida",
+            title="📦 Quantidade produzida",
             custom_data=["producao_formatada"],
         )
-        prod_fig.update_layout(margin=dict(l=10, r=10, t=60, b=10))
+        prod_fig.update_layout(
+            margin=dict(l=10, r=10, t=60, b=10),
+            title_font=dict(size=18, color="#2E7D32", family="Arial, sans-serif"),
+            plot_bgcolor='rgba(248, 249, 250, 0.5)',
+            paper_bgcolor='white',
+            font=dict(family="Arial, sans-serif", size=12, color="#333"),
+        )
         prod_fig.update_traces(
-            hovertemplate="Ano %{x}<br>Quantidade %{customdata[0]}<extra></extra>",
+            hovertemplate="<b>Ano %{x}</b><br>Quantidade: %{customdata[0]}<extra></extra>",
             mode="lines+markers+text",
             text=time_series["producao_formatada"],
             textposition="top center",
+            line=dict(color="#F57C00", width=3),
+            marker=dict(size=10, color="#FFB74D", line=dict(color="#F57C00", width=2)),
+            textfont=dict(size=9, color="#F57C00", family="Arial, sans-serif"),
         )
+        prod_fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
+        prod_fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
         st.plotly_chart(prod_fig, use_container_width=True)
 
-    st.subheader("Participação das principais cadeias no período selecionado")
+    st.subheader("🔗 Participação das principais cadeias no período selecionado")
     cadeias_agg = (
         filtered_df.groupby("cadeia")["valor"].sum().reset_index().sort_values("valor", ascending=False)
     )
@@ -779,24 +1029,35 @@ with tab_overview:
         cadeias_agg,
         x="cadeia",
         y="valor",
-        title="Valor bruto da produção por cadeia",
+        title="💰 Valor bruto da produção por cadeia",
         custom_data=["valor_formatado"],
         text="valor_formatado",
+        color="valor",
+        color_continuous_scale=["#81C784", "#66BB6A", "#4CAF50", "#43A047", "#2E7D32"],
     )
     cadeias_fig.update_layout(
         xaxis_title="Cadeia",
         yaxis_title="Valor (R$)",
         margin=dict(l=10, r=10, t=60, b=10),
+        title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+        plot_bgcolor='rgba(248, 249, 250, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12, color="#333"),
+        showlegend=False,
     )
     cadeias_fig.update_traces(
         textposition="outside",
-        hovertemplate="Cadeia %{x}<br>Valor %{customdata[0]}<extra></extra>",
+        hovertemplate="<b>%{x}</b><br>Valor: %{customdata[0]}<extra></extra>",
+        marker=dict(line=dict(color="#2E7D32", width=1)),
+        textfont=dict(size=11, color="#2E7D32", family="Arial, sans-serif"),
     )
+    cadeias_fig.update_xaxes(showgrid=False)
+    cadeias_fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
     st.plotly_chart(cadeias_fig, use_container_width=True)
 
 
 with tab_cadeias:
-    st.subheader("Hierarquia de cadeias e subcadeias")
+    st.subheader("🌳 Hierarquia de cadeias e subcadeias")
     hierarchy = (
         filtered_df.groupby(["cadeia", "subcadeia", "produto_conciso"])["valor"].sum().reset_index()
     )
@@ -806,16 +1067,23 @@ with tab_cadeias:
         path=["cadeia", "subcadeia", "produto_conciso"],
         values="valor",
         color="cadeia",
-        title="Distribuição de valor por cadeia, subcadeia e produto",
+        title="🎯 Distribuição de valor por cadeia, subcadeia e produto",
         custom_data=["valor_formatado"],
+        color_discrete_sequence=px.colors.qualitative.Set3,
     )
-    sunburst_fig.update_layout(margin=dict(l=0, r=0, t=60, b=0))
+    sunburst_fig.update_layout(
+        margin=dict(l=0, r=0, t=60, b=0),
+        title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12, color="#333"),
+    )
     sunburst_fig.update_traces(
-        hovertemplate="<b>%{label}</b><br>Valor %{customdata[0]}<extra></extra>"
+        hovertemplate="<b>%{label}</b><br>Valor: %{customdata[0]}<extra></extra>",
+        marker=dict(line=dict(color='white', width=2)),
     )
     st.plotly_chart(sunburst_fig, use_container_width=True)
 
-    st.subheader("Cadeia por regional IDR")
+    st.subheader("📍 Cadeia por regional IDR")
     cadeia_regional = (
         filtered_df.groupby(["regional_idr", "cadeia"])["valor"].sum().reset_index()
     )
@@ -826,9 +1094,10 @@ with tab_cadeias:
         x="regional_idr",
         y="valor",
         color="cadeia",
-        title="Distribuição do valor por cadeia e regional",
+        title="📊 Distribuição do valor por cadeia e regional",
         custom_data=["valor_formatado"],
         text="valor_formatado",
+        color_discrete_sequence=px.colors.qualitative.Set2,
     )
     cadeia_region_fig.update_layout(
         xaxis_title="Regional IDR",
@@ -836,16 +1105,28 @@ with tab_cadeias:
         margin=dict(l=10, r=10, t=60, b=10),
         legend_title="Cadeia",
         barmode="stack",
+        title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+        plot_bgcolor='rgba(248, 249, 250, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12, color="#333"),
+        legend=dict(
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="#2E7D32",
+            borderwidth=1
+        ),
     )
     cadeia_region_fig.update_traces(
         textposition="inside",
-        hovertemplate="Regional %{x}<br>Cadeia %{fullData.name}<br>Valor %{customdata[0]}<extra></extra>",
+        hovertemplate="<b>Regional: %{x}</b><br>Cadeia: %{fullData.name}<br>Valor: %{customdata[0]}<extra></extra>",
+        textfont=dict(size=10, family="Arial, sans-serif"),
     )
+    cadeia_region_fig.update_xaxes(showgrid=False)
+    cadeia_region_fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
     st.plotly_chart(cadeia_region_fig, use_container_width=True)
 
 
 with tab_produtos:
-    st.subheader("Produtos líderes por regional")
+    st.subheader("🏆 Produtos líderes por regional")
     prod_regional = (
         filtered_df.groupby(["regional_idr", "produto_conciso"])["valor"].sum().reset_index()
     )
@@ -859,23 +1140,38 @@ with tab_produtos:
         y="produto_conciso",
         color="regional_idr",
         orientation="h",
-        title="Top 5 produtos por regional (valor)",
+        title="🥇 Top 5 produtos por regional (valor)",
         custom_data=["valor_formatado"],
         text="valor_formatado",
+        color_discrete_sequence=px.colors.qualitative.Bold,
     )
     top_prod_fig.update_layout(
         xaxis_title="Valor (R$)",
         yaxis_title="Produto",
         margin=dict(l=10, r=10, t=60, b=10),
         legend_title="Regional IDR",
+        title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+        plot_bgcolor='rgba(248, 249, 250, 0.5)',
+        paper_bgcolor='white',
+        font=dict(family="Arial, sans-serif", size=12, color="#333"),
+        legend=dict(
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="#2E7D32",
+            borderwidth=1
+        ),
+        height=600,
     )
     top_prod_fig.update_traces(
         textposition="outside",
-        hovertemplate="Regional %{fullData.name}<br>Produto %{y}<br>Valor %{customdata[0]}<extra></extra>",
+        hovertemplate="<b>Regional: %{fullData.name}</b><br>Produto: %{y}<br>Valor: %{customdata[0]}<extra></extra>",
+        marker=dict(line=dict(color='white', width=1)),
+        textfont=dict(size=10, family="Arial, sans-serif"),
     )
+    top_prod_fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(200, 200, 200, 0.3)')
+    top_prod_fig.update_yaxes(showgrid=False)
     st.plotly_chart(top_prod_fig, use_container_width=True)
 
-    st.subheader("Tabela analítica de produtos")
+    st.subheader("📋 Tabela analítica de produtos")
     produto_tabela = (
         filtered_df.groupby(["produto_conciso", "unidade"])
         .agg(
@@ -906,7 +1202,7 @@ with tab_produtos:
 
 
 with tab_mapa:
-    st.subheader("Mapa temático por município")
+    st.subheader("🗺️ Mapa temático por município")
     geojson = load_geojson()
     mapa_metrics = ["valor", "producao", "area"]
     mapa_base = (
@@ -941,18 +1237,37 @@ with tab_mapa:
                 "producao": False,
                 "area": False,
             },
-            color_continuous_scale="Viridis",
+            color_continuous_scale=["#81C784", "#66BB6A", "#4CAF50", "#388E3C", "#2E7D32", "#1B5E20"],
             mapbox_style="carto-positron",
             zoom=5.2,
             center={"lat": -24.7, "lon": -51.9},
-            opacity=0.7,
-            title=f"{color_title} por município",
+            opacity=0.75,
+            title=f"📍 {color_title} por município",
         )
-        mapa_fig.update_layout(margin=dict(l=0, r=0, t=60, b=0))
+        mapa_fig.update_layout(
+            margin=dict(l=0, r=0, t=60, b=0),
+            title_font=dict(size=20, color="#2E7D32", family="Arial, sans-serif"),
+            font=dict(family="Arial, sans-serif", size=12, color="#333"),
+            coloraxis_colorbar=dict(
+                title=dict(font=dict(size=14, color="#2E7D32")),
+                thickness=20,
+                len=0.7,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="#2E7D32",
+                borderwidth=2,
+            ),
+        )
         st.plotly_chart(mapa_fig, use_container_width=True)
 
-    st.caption(
-        "Os valores apresentados correspondem ao somatório do período filtrado. "
-        "Utilize os filtros para analisar um único ano (incluindo 2020 e 2023) "
-        "ou intervalos personalizados."
-    )
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                padding: 1rem;
+                border-radius: 8px;
+                border-left: 4px solid #66BB6A;
+                margin-top: 1rem;">
+        <p style="color: #666; font-style: italic; margin: 0;">
+            💡 <b>Dica:</b> Os valores apresentados correspondem ao somatório do período filtrado.
+            Utilize os filtros para analisar um único ano ou intervalos personalizados.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
