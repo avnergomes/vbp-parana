@@ -70,11 +70,37 @@ PRODUCT_ALIASES: Dict[str, str] = {
     normalize_text("Alho Porro"): normalize_text("Alho Poro"),
     normalize_text("Arroz de Sequeiro"): normalize_text("Arroz Sequeiro"),
     normalize_text("Brocolos"): normalize_text("Brócolis"),
-    normalize_text("Milho Safra Normal"): normalize_text("Milho 1 Safra"),
-    normalize_text("Milho Safrinha"): normalize_text("Milho 2 Safra"),
-    normalize_text("Soja Safra Normal"): normalize_text("Soja 1 Safra"),
-    normalize_text("Soja Safrinha"): normalize_text("Soja 2 Safra"),
 }
+
+
+def build_product_correction_map(
+    produto_correcoes: pd.DataFrame, produto_catalogo: pd.DataFrame
+) -> Dict[str, str]:
+    """Cria mapa de correções alinhado ao catálogo de produtos."""
+
+    if produto_correcoes.empty:
+        return {}
+
+    catalog_norms = set(produto_catalogo["produto_norm"].unique())
+    correction_map: Dict[str, str] = {}
+
+    for _, row in produto_correcoes.iterrows():
+        corrected = row["produto_norm_corrigido"]
+        # Priorizar forma corrigida informada na planilha; ajustar para o catálogo quando necessário
+        target = corrected
+
+        if corrected not in catalog_norms:
+            alias_target = PRODUCT_ALIASES.get(corrected)
+            singular = corrected[:-1] if corrected.endswith("s") else corrected
+
+            if alias_target and alias_target in catalog_norms:
+                target = alias_target
+            elif singular in catalog_norms:
+                target = singular
+
+        correction_map[row["produto_norm_original"]] = target
+
+    return correction_map
 
 
 def coerce_year(series: pd.Series) -> pd.Series:
@@ -92,7 +118,7 @@ def coerce_year(series: pd.Series) -> pd.Series:
     return year.astype("Int64")
 
 
-def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, str]]:
     """Carrega tabelas de referência."""
     # Municípios
     municipios = pd.read_excel(DATA_DIR / "municipios_pr.xlsx")
@@ -133,7 +159,9 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     except:
         produto_correcoes = pd.DataFrame(columns=["produto_norm_original", "produto_norm_corrigido"])
 
-    return municipios, produto_catalogo, produto_correcoes
+    correction_map = build_product_correction_map(produto_correcoes, produto_catalogo)
+
+    return municipios, produto_catalogo, correction_map
 
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -151,7 +179,7 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_vbp_file(path: Path, municipios: pd.DataFrame,
                      produto_catalogo: pd.DataFrame,
-                     produto_correcoes: pd.DataFrame) -> pd.DataFrame:
+                     correction_map: Dict[str, str]) -> pd.DataFrame:
     """Processa um arquivo VBP individual."""
     raw = pd.read_excel(path)
     df = raw.copy()
@@ -193,15 +221,8 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
 
     # Normalizar produto
     df["produto_norm"] = df["produto"].apply(normalize_text)
+    df["produto_norm"] = df["produto_norm"].replace(correction_map)
     df["produto_norm"] = df["produto_norm"].replace(PRODUCT_ALIASES)
-
-    # Aplicar correções de produtos
-    if not produto_correcoes.empty:
-        correction_map = dict(zip(
-            produto_correcoes["produto_norm_original"],
-            produto_correcoes["produto_norm_corrigido"]
-        ))
-        df["produto_norm"] = df["produto_norm"].replace(correction_map)
 
     # Remover colunas regional_idr se existir (vamos usar do merge)
     if "regional_idr" in df.columns:
@@ -234,7 +255,7 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
 
 def load_all_vbp_data() -> pd.DataFrame:
     """Carrega todos os arquivos VBP."""
-    municipios, produto_catalogo, produto_correcoes = load_reference_tables()
+    municipios, produto_catalogo, correction_map = load_reference_tables()
 
     frames = []
     vbp_files = sorted(DATA_DIR.glob("*bp*.xlsx")) + sorted(DATA_DIR.glob("*BP*.xlsx"))
@@ -242,7 +263,7 @@ def load_all_vbp_data() -> pd.DataFrame:
 
     for path in vbp_files:
         print(f"Processando: {path.name}")
-        df = process_vbp_file(path, municipios, produto_catalogo, produto_correcoes)
+        df = process_vbp_file(path, municipios, produto_catalogo, correction_map)
         if not df.empty:
             frames.append(df)
 
