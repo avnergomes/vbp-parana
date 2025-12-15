@@ -214,6 +214,19 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
     if "unidade" not in df.columns:
         df["unidade"] = ""
     df["unidade"] = df["unidade"].astype(str).str.upper()
+    # Normalizar unidades (padronizar variações)
+    df["unidade"] = df["unidade"].replace({
+        "T": "TON",
+        "LIT": "L",
+        "UNI": "UN",
+        "M3": "M³",
+        "M2": "M²",
+        "MIL L": "MIL L",
+        "MLT": "MIL L",
+        "NAN": "",
+        "NONE": "",
+        "NA": "",
+    })
 
     # Normalizar município
     df["municipio_norm"] = df["municipio"].apply(normalize_text)
@@ -302,8 +315,8 @@ def generate_aggregated_data(data: pd.DataFrame) -> Dict[str, Any]:
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
 
-    # 4. Por produto
-    by_produto = data.groupby(["produto_conciso", "cadeia", "subcadeia", "unidade"]).agg({
+    # 4. Por produto (agregado sem unidade para evitar duplicados)
+    by_produto = data.groupby(["produto_conciso", "cadeia", "subcadeia"]).agg({
         "valor": "sum",
         "producao": "sum",
         "area": "sum"
@@ -441,8 +454,66 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "area": "ar"
     })
 
+    # Dados por ano-cadeia (para filtrar gráficos de cadeia por ano)
+    by_ano_cadeia = data.groupby(["ano", "cadeia"]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_cadeia["valor"] = by_ano_cadeia["valor"].round(0).astype(int)
+    by_ano_cadeia["producao"] = by_ano_cadeia["producao"].round(0).astype(int)
+    by_ano_cadeia["area"] = by_ano_cadeia["area"].round(0).astype(int)
+    by_ano_cadeia = by_ano_cadeia.rename(columns={
+        "ano": "a", "cadeia": "c", "valor": "v", "producao": "p", "area": "ar"
+    })
+
+    # Dados por ano-subcadeia
+    by_ano_subcadeia = data.groupby(["ano", "cadeia", "subcadeia"]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_subcadeia["valor"] = by_ano_subcadeia["valor"].round(0).astype(int)
+    by_ano_subcadeia["producao"] = by_ano_subcadeia["producao"].round(0).astype(int)
+    by_ano_subcadeia["area"] = by_ano_subcadeia["area"].round(0).astype(int)
+    by_ano_subcadeia = by_ano_subcadeia.rename(columns={
+        "ano": "a", "cadeia": "c", "subcadeia": "s", "valor": "v", "producao": "p", "area": "ar"
+    })
+
+    # Dados por ano-produto
+    by_ano_produto = data.groupby(["ano", "produto_conciso", "cadeia", "subcadeia"]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_produto["valor"] = by_ano_produto["valor"].round(0).astype(int)
+    by_ano_produto["producao"] = by_ano_produto["producao"].round(0).astype(int)
+    by_ano_produto["area"] = by_ano_produto["area"].round(0).astype(int)
+    by_ano_produto = by_ano_produto.rename(columns={
+        "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
+        "valor": "v", "producao": "p", "area": "ar"
+    })
+
+    # Dados por ano-regional
+    by_ano_regional = data.groupby(["ano", "regional_idr", "meso_idr"]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_regional["valor"] = by_ano_regional["valor"].round(0).astype(int)
+    by_ano_regional["producao"] = by_ano_regional["producao"].round(0).astype(int)
+    by_ano_regional["area"] = by_ano_regional["area"].round(0).astype(int)
+    by_ano_regional = by_ano_regional.rename(columns={
+        "ano": "a", "regional_idr": "r", "meso_idr": "m",
+        "valor": "v", "producao": "p", "area": "ar"
+    })
+
     return {
         "mapData": by_ano_municipio.to_dict(orient="records"),
+        "byAnoCadeia": by_ano_cadeia.to_dict(orient="records"),
+        "byAnoSubcadeia": by_ano_subcadeia.to_dict(orient="records"),
+        "byAnoProduto": by_ano_produto.to_dict(orient="records"),
+        "byAnoRegional": by_ano_regional.to_dict(orient="records"),
     }
 
 

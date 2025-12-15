@@ -7,7 +7,7 @@ const BASE_PATH = import.meta.env.BASE_URL || '/vbp-parana/';
  */
 export function useData() {
   const [aggregated, setAggregated] = useState(null);
-  const [mapData, setMapData] = useState(null);
+  const [detailed, setDetailed] = useState(null);
   const [geoData, setGeoData] = useState(null);
   const [produtoMap, setProdutoMap] = useState(null);
   const [geoMap, setGeoMap] = useState(null);
@@ -40,7 +40,7 @@ export function useData() {
         ]);
 
         setAggregated(aggData);
-        setMapData(detailedData.mapData);
+        setDetailed(detailedData);
         setGeoData(geoDataJson);
         setProdutoMap(prodMapData);
         setGeoMap(geoMapData);
@@ -58,7 +58,7 @@ export function useData() {
 
   return {
     aggregated,
-    mapData,
+    detailed,
     geoData,
     produtoMap,
     geoMap,
@@ -69,14 +69,24 @@ export function useData() {
 
 /**
  * Hook para filtrar dados com base nas seleções
+ * Usa dados granulares para recalcular agregações quando filtros são aplicados
  */
-export function useFilteredData(aggregated, mapData, geoMap, filters) {
+export function useFilteredData(aggregated, detailed, geoMap, filters) {
   return useMemo(() => {
-    if (!aggregated || !mapData) return null;
+    if (!aggregated || !detailed) return null;
 
     const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
     const [anoMin, anoMax] = anos;
+    const metadata = aggregated.metadata;
 
+    // Determinar se há filtros ativos (além do período completo)
+    const hasYearFilter = anoMin !== metadata.anoMin || anoMax !== metadata.anoMax;
+    const hasGeoFilter = mesos.length > 0 || regionais.length > 0;
+    const hasCadeiaFilter = cadeias.length > 0;
+    const hasSubcadeiaFilter = subcadeias.length > 0;
+    const hasProdutoFilter = produtos.length > 0;
+
+    // Calcular regionais alvo
     const regionaisFromMesos = mesos.length > 0 && geoMap
       ? mesos.flatMap(meso => geoMap[meso]?.regionais || [])
       : [];
@@ -86,27 +96,7 @@ export function useFilteredData(aggregated, mapData, geoMap, filters) {
       : regionaisFromMesos;
 
     const targetRegionaisSet = new Set(targetRegionais);
-
-    const collectMunicipiosFromRegionais = () => {
-      if (!geoMap) return new Set();
-      const codes = new Set();
-
-      Object.values(geoMap).forEach(({ regionais: regList, municipios: muniMap }) => {
-        regList.forEach(regional => {
-          if (targetRegionaisSet.size === 0 || targetRegionaisSet.has(regional)) {
-            (muniMap[regional] || []).forEach(m => codes.add(m.cod_ibge));
-          }
-        });
-      });
-
-      return codes;
-    };
-
-    const municipiosFromMesos = mesos.length > 0 ? collectMunicipiosFromRegionais() : new Set();
-
-    const targetMunicipios = municipios.length > 0
-      ? new Set(municipios)
-      : municipiosFromMesos;
+    const targetMesosSet = new Set(mesos);
 
     // Filtrar série temporal
     const timeSeries = aggregated.timeSeries.filter(
@@ -123,15 +113,125 @@ export function useFilteredData(aggregated, mapData, geoMap, filters) {
       { valor: 0, producao: 0, area: 0 }
     );
 
-    // Filtrar dados do mapa
-    const filteredMapData = mapData.filter(item => {
+    // === AGREGAR DADOS POR CADEIA ===
+    let byCadeia;
+    if (hasYearFilter) {
+      // Usar dados granulares por ano-cadeia
+      const filtered = detailed.byAnoCadeia.filter(item =>
+        item.a >= anoMin && item.a <= anoMax
+      );
+      const grouped = {};
+      filtered.forEach(item => {
+        if (!grouped[item.c]) {
+          grouped[item.c] = { cadeia: item.c, valor: 0, producao: 0, area: 0 };
+        }
+        grouped[item.c].valor += item.v;
+        grouped[item.c].producao += item.p;
+        grouped[item.c].area += item.ar;
+      });
+      byCadeia = Object.values(grouped).sort((a, b) => b.valor - a.valor);
+    } else {
+      byCadeia = aggregated.byCadeia;
+    }
+
+    // Filtrar por cadeia selecionada
+    if (hasCadeiaFilter) {
+      byCadeia = byCadeia.filter(item => cadeias.includes(item.cadeia));
+    }
+
+    // === AGREGAR DADOS POR SUBCADEIA ===
+    let bySubcadeia;
+    if (hasYearFilter) {
+      const filtered = detailed.byAnoSubcadeia.filter(item =>
+        item.a >= anoMin && item.a <= anoMax
+      );
+      const grouped = {};
+      filtered.forEach(item => {
+        const key = `${item.c}|${item.s}`;
+        if (!grouped[key]) {
+          grouped[key] = { cadeia: item.c, subcadeia: item.s, valor: 0, producao: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].producao += item.p;
+        grouped[key].area += item.ar;
+      });
+      bySubcadeia = Object.values(grouped).sort((a, b) => b.valor - a.valor);
+    } else {
+      bySubcadeia = aggregated.bySubcadeia;
+    }
+
+    if (hasCadeiaFilter) {
+      bySubcadeia = bySubcadeia.filter(item => cadeias.includes(item.cadeia));
+    }
+    if (hasSubcadeiaFilter) {
+      bySubcadeia = bySubcadeia.filter(item => subcadeias.includes(item.subcadeia));
+    }
+
+    // === AGREGAR DADOS POR PRODUTO ===
+    let byProduto;
+    if (hasYearFilter) {
+      const filtered = detailed.byAnoProduto.filter(item =>
+        item.a >= anoMin && item.a <= anoMax
+      );
+      const grouped = {};
+      filtered.forEach(item => {
+        const key = item.n;
+        if (!grouped[key]) {
+          grouped[key] = { produto_conciso: item.n, cadeia: item.c, subcadeia: item.s, valor: 0, producao: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].producao += item.p;
+        grouped[key].area += item.ar;
+      });
+      byProduto = Object.values(grouped).sort((a, b) => b.valor - a.valor);
+    } else {
+      byProduto = aggregated.byProduto;
+    }
+
+    if (hasCadeiaFilter) {
+      byProduto = byProduto.filter(item => cadeias.includes(item.cadeia));
+    }
+    if (hasSubcadeiaFilter) {
+      byProduto = byProduto.filter(item => subcadeias.includes(item.subcadeia));
+    }
+    if (hasProdutoFilter) {
+      byProduto = byProduto.filter(item => produtos.includes(item.produto_conciso));
+    }
+
+    // === AGREGAR DADOS POR REGIONAL ===
+    let byRegional;
+    if (hasYearFilter) {
+      const filtered = detailed.byAnoRegional.filter(item =>
+        item.a >= anoMin && item.a <= anoMax
+      );
+      const grouped = {};
+      filtered.forEach(item => {
+        if (!grouped[item.r]) {
+          grouped[item.r] = { regional_idr: item.r, meso_idr: item.m, valor: 0, producao: 0, area: 0 };
+        }
+        grouped[item.r].valor += item.v;
+        grouped[item.r].producao += item.p;
+        grouped[item.r].area += item.ar;
+      });
+      byRegional = Object.values(grouped).sort((a, b) => b.valor - a.valor);
+    } else {
+      byRegional = aggregated.byRegional;
+    }
+
+    if (targetRegionaisSet.size > 0) {
+      byRegional = byRegional.filter(item => targetRegionaisSet.has(item.regional_idr));
+    }
+    if (targetMesosSet.size > 0) {
+      byRegional = byRegional.filter(item => targetMesosSet.has(item.meso_idr));
+    }
+
+    // === AGREGAR DADOS POR MUNICÍPIO (do mapData) ===
+    const filteredMapData = detailed.mapData.filter(item => {
       if (item.a < anoMin || item.a > anoMax) return false;
       if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
-      if (targetMunicipios.size > 0 && !targetMunicipios.has(item.c)) return false;
       return true;
     });
 
-    // Agregar dados do mapa por município
     const mapByMunicipio = {};
     filteredMapData.forEach(item => {
       if (!mapByMunicipio[item.c]) {
@@ -142,45 +242,36 @@ export function useFilteredData(aggregated, mapData, geoMap, filters) {
       mapByMunicipio[item.c].area += item.ar;
     });
 
-    // Filtrar por cadeia se selecionado
-    let byCadeia = aggregated.byCadeia;
-    let bySubcadeia = aggregated.bySubcadeia;
-    let byProduto = aggregated.byProduto;
-    let hierarchy = aggregated.hierarchy;
+    // === HIERARCHY para treemap ===
+    let hierarchy;
+    if (hasYearFilter) {
+      // Recalcular hierarchy dos dados granulares
+      const filtered = detailed.byAnoProduto.filter(item =>
+        item.a >= anoMin && item.a <= anoMax
+      );
+      const grouped = {};
+      filtered.forEach(item => {
+        const key = `${item.c}|${item.s}|${item.n}`;
+        if (!grouped[key]) {
+          grouped[key] = { cadeia: item.c, subcadeia: item.s, produto_conciso: item.n, valor: 0, producao: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].producao += item.p;
+        grouped[key].area += item.ar;
+      });
+      hierarchy = Object.values(grouped);
+    } else {
+      hierarchy = aggregated.hierarchy;
+    }
 
-    if (cadeias.length > 0) {
-      byCadeia = byCadeia.filter(item => cadeias.includes(item.cadeia));
-      bySubcadeia = bySubcadeia.filter(item => cadeias.includes(item.cadeia));
-      byProduto = byProduto.filter(item => cadeias.includes(item.cadeia));
+    if (hasCadeiaFilter) {
       hierarchy = hierarchy.filter(item => cadeias.includes(item.cadeia));
     }
-
-    if (subcadeias.length > 0) {
-      bySubcadeia = bySubcadeia.filter(item => subcadeias.includes(item.subcadeia));
-      byProduto = byProduto.filter(item => subcadeias.includes(item.subcadeia));
+    if (hasSubcadeiaFilter) {
       hierarchy = hierarchy.filter(item => subcadeias.includes(item.subcadeia));
     }
-
-    if (produtos.length > 0) {
-      byProduto = byProduto.filter(item => produtos.includes(item.produto_conciso));
+    if (hasProdutoFilter) {
       hierarchy = hierarchy.filter(item => produtos.includes(item.produto_conciso));
-    }
-
-    // Filtrar regionais
-    let byRegional = aggregated.byRegional;
-    let byMunicipio = aggregated.byMunicipio;
-
-    if (targetRegionaisSet.size > 0) {
-      byRegional = byRegional.filter(item => targetRegionaisSet.has(item.regional_idr));
-      byMunicipio = byMunicipio.filter(item => targetRegionaisSet.has(item.regional_idr));
-    }
-
-    if (mesos.length > 0) {
-      byMunicipio = byMunicipio.filter(item => mesos.includes(item.meso_idr));
-    }
-
-    if (targetMunicipios.size > 0) {
-      byMunicipio = byMunicipio.filter(item => targetMunicipios.has(item.cod_ibge));
     }
 
     // Evolução por cadeia filtrada por ano
@@ -206,5 +297,5 @@ export function useFilteredData(aggregated, mapData, geoMap, filters) {
       topProdutosAno,
       hierarchy,
     };
-  }, [aggregated, mapData, geoMap, filters]);
+  }, [aggregated, detailed, geoMap, filters]);
 }
