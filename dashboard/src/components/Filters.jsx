@@ -83,7 +83,7 @@ export default function Filters({
     anoMax !== metadata.anoMax;
 
   return (
-    <div className="card p-4 md:p-6">
+    <div className="card p-4 md:p-6 relative z-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -247,10 +247,10 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-earth-200 overflow-hidden">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-earth-200 overflow-hidden">
             {/* Search */}
             <div className="p-2 border-b border-earth-100">
               <input

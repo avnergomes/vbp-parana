@@ -70,12 +70,43 @@ export function useData() {
 /**
  * Hook para filtrar dados com base nas seleções
  */
-export function useFilteredData(aggregated, mapData, filters) {
+export function useFilteredData(aggregated, mapData, geoMap, filters) {
   return useMemo(() => {
     if (!aggregated || !mapData) return null;
 
     const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
     const [anoMin, anoMax] = anos;
+
+    const regionaisFromMesos = mesos.length > 0 && geoMap
+      ? mesos.flatMap(meso => geoMap[meso]?.regionais || [])
+      : [];
+
+    const targetRegionais = regionais.length > 0
+      ? regionais
+      : regionaisFromMesos;
+
+    const targetRegionaisSet = new Set(targetRegionais);
+
+    const collectMunicipiosFromRegionais = () => {
+      if (!geoMap) return new Set();
+      const codes = new Set();
+
+      Object.values(geoMap).forEach(({ regionais: regList, municipios: muniMap }) => {
+        regList.forEach(regional => {
+          if (targetRegionaisSet.size === 0 || targetRegionaisSet.has(regional)) {
+            (muniMap[regional] || []).forEach(m => codes.add(m.cod_ibge));
+          }
+        });
+      });
+
+      return codes;
+    };
+
+    const municipiosFromMesos = mesos.length > 0 ? collectMunicipiosFromRegionais() : new Set();
+
+    const targetMunicipios = municipios.length > 0
+      ? new Set(municipios)
+      : municipiosFromMesos;
 
     // Filtrar série temporal
     const timeSeries = aggregated.timeSeries.filter(
@@ -95,7 +126,8 @@ export function useFilteredData(aggregated, mapData, filters) {
     // Filtrar dados do mapa
     const filteredMapData = mapData.filter(item => {
       if (item.a < anoMin || item.a > anoMax) return false;
-      if (regionais.length > 0 && !regionais.includes(item.r)) return false;
+      if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
+      if (targetMunicipios.size > 0 && !targetMunicipios.has(item.c)) return false;
       return true;
     });
 
@@ -138,13 +170,17 @@ export function useFilteredData(aggregated, mapData, filters) {
     let byRegional = aggregated.byRegional;
     let byMunicipio = aggregated.byMunicipio;
 
-    if (regionais.length > 0) {
-      byRegional = byRegional.filter(item => regionais.includes(item.regional_idr));
-      byMunicipio = byMunicipio.filter(item => regionais.includes(item.regional_idr));
+    if (targetRegionaisSet.size > 0) {
+      byRegional = byRegional.filter(item => targetRegionaisSet.has(item.regional_idr));
+      byMunicipio = byMunicipio.filter(item => targetRegionaisSet.has(item.regional_idr));
     }
 
-    if (municipios.length > 0) {
-      byMunicipio = byMunicipio.filter(item => municipios.includes(item.cod_ibge));
+    if (mesos.length > 0) {
+      byMunicipio = byMunicipio.filter(item => mesos.includes(item.meso_idr));
+    }
+
+    if (targetMunicipios.size > 0) {
+      byMunicipio = byMunicipio.filter(item => targetMunicipios.has(item.cod_ibge));
     }
 
     // Evolução por cadeia filtrada por ano
@@ -170,5 +206,5 @@ export function useFilteredData(aggregated, mapData, filters) {
       topProdutosAno,
       hierarchy,
     };
-  }, [aggregated, mapData, filters]);
+  }, [aggregated, mapData, geoMap, filters]);
 }

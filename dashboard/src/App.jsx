@@ -43,7 +43,7 @@ export default function App() {
   }, [aggregated?.metadata]);
 
   // Filter data
-  const filteredData = useFilteredData(aggregated, mapData, filters);
+  const filteredData = useFilteredData(aggregated, mapData, geoMap, filters);
 
   if (loading) {
     return <Loading />;
