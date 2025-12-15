@@ -51,7 +51,7 @@ COLUMN_ALIASES: Dict[str, str] = {
     "area": "area", "area_ha": "area", "area_(ha)": "area",
     "producao": "producao", "quantidade": "producao",
     "abate": "abate", "abate_comercializacao": "abate",
-    "valor": "valor", "valor_rs": "valor", "vbp": "valor",
+    "valor": "valor", "valor_rs": "valor", "valor_r": "valor", "vbp": "valor",
 }
 
 MUNICIPIO_ALIASES: Dict[str, str] = {
