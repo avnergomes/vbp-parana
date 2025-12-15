@@ -16,7 +16,7 @@ import Footer from './components/Footer';
 import Loading from './components/Loading';
 
 export default function App() {
-  const { aggregated, mapData, geoData, produtoMap, geoMap, loading, error } = useData();
+  const { aggregated, detailed, geoData, produtoMap, geoMap, loading, error } = useData();
 
   // Filters state
   const [filters, setFilters] = useState({
@@ -43,7 +43,7 @@ export default function App() {
   }, [aggregated?.metadata]);
 
   // Filter data
-  const filteredData = useFilteredData(aggregated, mapData, geoMap, filters);
+  const filteredData = useFilteredData(aggregated, detailed, geoMap, filters);
 
   if (loading) {
     return <Loading />;
