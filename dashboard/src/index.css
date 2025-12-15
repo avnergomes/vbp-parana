@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-earth-50 via-white to-forest-50 min-h-screen;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/50;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .stat-card {
+    @apply card p-6 relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-forest-500 to-forest-700;
+  }
+
+  .filter-select {
+    @apply w-full px-4 py-2.5 bg-white border border-earth-200 rounded-xl text-sm
+           focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500
+           transition-all duration-200 appearance-none cursor-pointer
+           hover:border-forest-400;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2316a34a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+  }
+
+  .filter-label {
+    @apply block text-sm font-medium text-earth-700 mb-1.5;
+  }
+
+  .tab-button {
+    @apply px-6 py-3 text-sm font-medium rounded-xl transition-all duration-200
+           text-earth-600 hover:text-forest-700 hover:bg-forest-50;
+  }
+
+  .tab-button.active {
+    @apply bg-gradient-to-r from-forest-600 to-forest-700 text-white shadow-lg shadow-forest-500/25;
+  }
+
+  .section-title {
+    @apply text-xl font-display font-bold text-earth-900 flex items-center gap-3;
+  }
+
+  .chart-container {
+    @apply card p-6;
+  }
+
+  .kpi-value {
+    @apply text-3xl font-display font-bold bg-gradient-to-r from-forest-700 to-forest-600
+           bg-clip-text text-transparent;
+  }
+
+  .kpi-label {
+    @apply text-sm font-medium text-earth-500 uppercase tracking-wide;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green {
+    @apply bg-forest-100 text-forest-800;
+  }
+
+  .badge-yellow {
+    @apply bg-harvest-100 text-harvest-800;
+  }
+
+  .badge-blue {
+    @apply bg-water-100 text-water-800;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.forest.300') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme('colors.forest.300');
+    border-radius: 3px;
+  }
+}
+
+/* Leaflet customizations */
+.leaflet-container {
+  @apply rounded-xl;
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  @apply rounded-xl shadow-soft;
+}
+
+.leaflet-popup-content {
+  @apply text-sm;
+}
+
+/* Recharts customizations */
+.recharts-default-tooltip {
+  @apply rounded-xl shadow-soft border-0 !important;
+}
+
+.recharts-tooltip-wrapper {
+  @apply outline-none;
+}
