@@ -214,6 +214,19 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
     if "unidade" not in df.columns:
         df["unidade"] = ""
     df["unidade"] = df["unidade"].astype(str).str.upper()
+    # Normalizar unidades (padronizar variações)
+    df["unidade"] = df["unidade"].replace({
+        "T": "TON",
+        "LIT": "L",
+        "UNI": "UN",
+        "M3": "M³",
+        "M2": "M²",
+        "MIL L": "MIL L",
+        "MLT": "MIL L",
+        "NAN": "",
+        "NONE": "",
+        "NA": "",
+    })
 
     # Normalizar município
     df["municipio_norm"] = df["municipio"].apply(normalize_text)
