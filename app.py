@@ -19,8 +19,8 @@ st.title("📊 VBP Paraná — Inteligência Territorial da Produção")
 
 DATA_DIR = Path("data")
 MAP_FILE = Path("mun_PR.json")
-PRODUCT_MAP_FILE = Path("mapa_produtos_completo.xlsx")
-PRODUCT_STANDARD_FILE = Path("padronização produtos.xlsx")
+PRODUCT_LIST_FILE = DATA_DIR / "lista_produtos_vbp_2012_2024.xlsx"
+REFERENCE_FILES = {"municipios_pr.xlsx", PRODUCT_LIST_FILE.name}
 
 # ---------------------------------------------------------------------------
 # Utilidades
@@ -40,7 +40,7 @@ def build_data_manifest() -> List[Tuple[str, int, int]]:
 
     manifest: List[Tuple[str, int, int]] = []
     for path in sorted(DATA_DIR.glob("*.xls*")):
-        if path.name.lower() == "municipios_pr.xlsx":
+        if path.name.lower() in {name.lower() for name in REFERENCE_FILES}:
             continue
         stat = path.stat()
         manifest.append((path.name, int(stat.st_mtime_ns), stat.st_size))
@@ -279,7 +279,7 @@ PRODUCT_SUPPLEMENTS: List[Dict[str, str]] = [
 
 
 @st.cache_data(show_spinner="Carregando catálogos auxiliares...")
-def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame]:
+def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     municipios = pd.read_excel(DATA_DIR / "municipios_pr.xlsx")
     municipios = municipios.rename(
         columns={
@@ -303,70 +303,44 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame]:
         ]
     ]
 
-    produto_ref = pd.read_excel(PRODUCT_MAP_FILE)
-    produto_ref = produto_ref.rename(
-        columns={
-            "Produto_Conciso": "produto_conciso",
-            "Cadeia": "cadeia",
-            "Subcadeia": "subcadeia",
-        }
-    )
-    produto_ref["produto_norm"] = produto_ref["produto_norm"].apply(normalize_text)
-
-    padron = pd.read_excel(PRODUCT_STANDARD_FILE)
-    padron = padron.rename(
+    produtos_raw = pd.read_excel(PRODUCT_LIST_FILE, sheet_name="Produtos")
+    produtos_raw = produtos_raw.rename(
         columns={
             "PRODUTO": "produto_conciso",
             "Cadeia": "cadeia",
             "Subcadeia": "subcadeia",
         }
     )
-    padron["produto_norm"] = padron["produto_conciso"].apply(normalize_text)
-    padron = padron[["produto_norm", "produto_conciso", "cadeia", "subcadeia"]]
-
-    produto_catalogo = pd.concat(
-        [
-            produto_ref[["produto_norm", "produto_conciso", "cadeia", "subcadeia"]],
-            padron,
-        ],
-        ignore_index=True,
-    )
+    produtos_raw["produto_norm"] = produtos_raw["produto_conciso"].apply(normalize_text)
+    produto_catalogo = produtos_raw[["produto_norm", "produto_conciso", "cadeia", "subcadeia"]]
     produto_catalogo = produto_catalogo.dropna(subset=["produto_norm"])
-    produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].apply(
-        normalize_text
-    )
-    produto_catalogo["placeholder"] = produto_catalogo["produto_conciso"].fillna("").str.contains(
-        r"\*"
-    )
-    produto_catalogo = produto_catalogo.sort_values(
-        ["produto_norm", "placeholder", "produto_conciso"]
-    )
-    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="last")
-    produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
+    produto_catalogo = produto_catalogo.sort_values(["produto_norm", "produto_conciso"])
+    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
 
     if PRODUCT_ALIASES:
         produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].replace(
             PRODUCT_ALIASES
         )
 
-    if PRODUCT_SUPPLEMENTS:
-        suplemento_df = pd.DataFrame(PRODUCT_SUPPLEMENTS)
-        produto_catalogo = pd.concat([produto_catalogo, suplemento_df], ignore_index=True)
+    produto_catalogo[["cadeia", "subcadeia"]] = produto_catalogo[
+        ["cadeia", "subcadeia"]
+    ].fillna("Não classificado")
 
-    produto_catalogo = produto_catalogo.dropna(subset=["produto_norm"])
-    produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].apply(
+    produto_correcoes = pd.read_excel(
+        PRODUCT_LIST_FILE,
+        sheet_name="Correcao_produtos",
+        header=None,
+        names=["produto_original", "produto_corrigido"],
+    )
+    produto_correcoes = produto_correcoes.dropna(subset=["produto_original", "produto_corrigido"])
+    produto_correcoes["produto_norm_original"] = produto_correcoes["produto_original"].apply(
         normalize_text
     )
-    produto_catalogo["placeholder"] = produto_catalogo["produto_conciso"].fillna("").str.contains(
-        r"\*"
-    )
-    produto_catalogo = produto_catalogo.sort_values(
-        ["produto_norm", "placeholder", "produto_conciso"]
-    )
-    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="last")
-    produto_catalogo = produto_catalogo.drop(columns=["placeholder"])
+    produto_correcoes["produto_norm_corrigido"] = produto_correcoes[
+        "produto_corrigido"
+    ].apply(normalize_text)
 
-    return municipios, produto_catalogo
+    return municipios, produto_catalogo, produto_correcoes
 
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -385,6 +359,7 @@ def enrich_with_catalogues(
     df: pd.DataFrame,
     municipios: pd.DataFrame,
     produto_catalogo: pd.DataFrame,
+    produto_correcoes: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, List[str], List[str]]:
     municipio_lookup = municipios.set_index("municipio_norm")[
         "municipio_oficial"
@@ -397,14 +372,34 @@ def enrich_with_catalogues(
         df.loc[alias_mask, "municipio"] = df.loc[alias_mask, "municipio_norm"].map(
             municipio_lookup
         ).fillna(df.loc[alias_mask, "municipio"])
-    df["produto_norm"] = df["produto"].apply(normalize_text)
+
+    df["produto_norm_raw"] = df["produto"].apply(normalize_text)
     if PRODUCT_ALIASES:
-        df["produto_norm"] = df["produto_norm"].replace(PRODUCT_ALIASES)
+        df["produto_norm_raw"] = df["produto_norm_raw"].replace(PRODUCT_ALIASES)
+
+    if not produto_correcoes.empty:
+        correction_map = dict(
+            zip(
+                produto_correcoes["produto_norm_original"],
+                produto_correcoes["produto_corrigido"],
+            )
+        )
+        df["produto_corrigido"] = df["produto_norm_raw"].map(correction_map).fillna(
+            df["produto"]
+        )
+    else:
+        df["produto_corrigido"] = df["produto"]
+
+    df["produto_norm"] = df["produto_corrigido"].apply(normalize_text)
+
     merged = df.merge(municipios, on="municipio_norm", how="left")
 
     merged = merged.merge(produto_catalogo, on="produto_norm", how="left")
 
-    merged["produto_conciso"] = merged["produto_conciso"].fillna(merged["produto"])
+    merged["produto"] = merged.get("produto_corrigido", merged.get("produto"))
+    merged["produto_conciso"] = merged["produto_conciso"].fillna(
+        merged["produto_corrigido"]
+    )
     merged["cadeia"] = merged["cadeia"].fillna("Não classificado")
     merged["subcadeia"] = merged["subcadeia"].fillna("Não classificado")
 
@@ -416,7 +411,7 @@ def enrich_with_catalogues(
         .tolist()
     )
     missing_produtos = (
-        merged.loc[merged["cadeia"] == "Não classificado", "produto"]
+        merged.loc[merged["cadeia"] == "Não classificado", "produto_corrigido"]
         .dropna()
         .sort_values()
         .unique()
@@ -430,6 +425,7 @@ def read_single_file(
     path: Path,
     municipios: pd.DataFrame,
     produto_catalogo: pd.DataFrame,
+    produto_correcoes: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, List[str], List[str]]:
     raw = pd.read_excel(path)
     df = raw.copy()
@@ -469,7 +465,7 @@ def read_single_file(
         df["regional_idr_origem"] = pd.Series([pd.NA] * len(df), dtype="string")
 
     enriched, missing_municipios, missing_produtos = enrich_with_catalogues(
-        df, municipios, produto_catalogo
+        df, municipios, produto_catalogo, produto_correcoes
     )
     enriched["origem"] = path.name
 
@@ -511,7 +507,7 @@ def read_single_file(
 def load_vbp_data(
     manifest: List[Tuple[str, int, int]]
 ) -> Tuple[pd.DataFrame, Dict[str, List[str]]]:
-    municipios, produto_catalogo = load_reference_tables()
+    municipios, produto_catalogo, produto_correcoes = load_reference_tables()
 
     frames: List[pd.DataFrame] = []
     missing_municipios: set[str] = set()
@@ -522,7 +518,9 @@ def load_vbp_data(
         if not path.exists():
             continue
 
-        df, miss_mun, miss_prod = read_single_file(path, municipios, produto_catalogo)
+        df, miss_mun, miss_prod = read_single_file(
+            path, municipios, produto_catalogo, produto_correcoes
+        )
         if df.empty:
             continue
         frames.append(df)
@@ -579,6 +577,7 @@ regional_options = sort_unique(data["regional_idr"])
 cadeias = sort_unique(data["cadeia"])
 subcadeias = sort_unique(data["subcadeia"])
 produtos = sort_unique(data["produto_conciso"])
+municipios_options = sort_unique(data["municipio_oficial"])
 
 selected_mesos = st.sidebar.multiselect(
     "Mesorregião IDR",
@@ -590,6 +589,12 @@ selected_regionais = st.sidebar.multiselect(
     "Regional IDR",
     options=regional_options,
     default=regional_options,
+)
+
+selected_municipios = st.sidebar.multiselect(
+    "Município",
+    options=municipios_options,
+    default=municipios_options,
 )
 
 selected_cadeias = st.sidebar.multiselect(
@@ -640,6 +645,8 @@ if selected_mesos:
     mask &= data["meso_idr"].isin(selected_mesos)
 if selected_regionais:
     mask &= data["regional_idr"].isin(selected_regionais)
+if selected_municipios:
+    mask &= data["municipio_oficial"].isin(selected_municipios)
 if selected_cadeias:
     mask &= data["cadeia"].isin(selected_cadeias)
 if selected_subcadeias:
