@@ -1,0 +1,139 @@
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import { TrendingUp } from 'lucide-react';
+import { formatCurrency, formatNumber } from '../utils/format';
+
+export default function TimeSeriesChart({ data, metric = 'valor' }) {
+  if (!data?.timeSeries?.length) return null;
+
+  const chartData = data.timeSeries.map(item => ({
+    ano: item.ano,
+    valor: item.valor,
+    producao: item.producao,
+    area: item.area,
+  }));
+
+  const metricConfig = {
+    valor: {
+      color: '#22c55e',
+      label: 'Valor (R$)',
+      formatter: (v) => formatCurrency(v),
+    },
+    producao: {
+      color: '#0ea5e9',
+      label: 'Produção',
+      formatter: (v) => formatNumber(v),
+    },
+    area: {
+      color: '#f59e0b',
+      label: 'Área (ha)',
+      formatter: (v) => formatNumber(v, 'ha'),
+    },
+  };
+
+  const config = metricConfig[metric];
+
+  return (
+    <div className="chart-container">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-forest-100 rounded-lg">
+          <TrendingUp className="w-5 h-5 text-forest-600" />
+        </div>
+        <h3 className="section-title">Evolução Temporal</h3>
+      </div>
+
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+            <defs>
+              <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorProducao" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis
+              dataKey="ano"
+              tick={{ fontSize: 12, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+            />
+            <YAxis
+              tick={{ fontSize: 12, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+              tickFormatter={(value) => formatNumber(value)}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                padding: '12px 16px',
+              }}
+              formatter={(value, name) => {
+                const cfg = metricConfig[name];
+                return [cfg ? cfg.formatter(value) : value, cfg ? cfg.label : name];
+              }}
+              labelFormatter={(label) => `Ano ${label}`}
+            />
+            <Legend
+              verticalAlign="top"
+              height={36}
+              formatter={(value) => metricConfig[value]?.label || value}
+            />
+            <Line
+              type="monotone"
+              dataKey="valor"
+              stroke="#22c55e"
+              strokeWidth={3}
+              dot={{ r: 4, fill: '#22c55e', strokeWidth: 2, stroke: 'white' }}
+              activeDot={{ r: 6, fill: '#22c55e', strokeWidth: 2, stroke: 'white' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="producao"
+              stroke="#0ea5e9"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#0ea5e9', strokeWidth: 2, stroke: 'white' }}
+              activeDot={{ r: 5, fill: '#0ea5e9', strokeWidth: 2, stroke: 'white' }}
+            />
+            <Line
+              type="monotone"
+              dataKey="area"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#f59e0b', strokeWidth: 2, stroke: 'white' }}
+              activeDot={{ r: 5, fill: '#f59e0b', strokeWidth: 2, stroke: 'white' }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="flex justify-center gap-6 mt-4">
+        <LegendItem color="#22c55e" label="Valor (R$)" />
+        <LegendItem color="#0ea5e9" label="Produção" />
+        <LegendItem color="#f59e0b" label="Área (ha)" />
+      </div>
+    </div>
+  );
+}
+
+function LegendItem({ color, label }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+      <span className="text-sm text-earth-600">{label}</span>
+    </div>
+  );
+}
