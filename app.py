@@ -527,8 +527,11 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     produtos_raw["produto_norm"] = produtos_raw["produto_conciso"].apply(normalize_text)
     produto_catalogo = produtos_raw[["produto_norm", "produto_conciso", "cadeia", "subcadeia"]]
     produto_catalogo = produto_catalogo.dropna(subset=["produto_norm"])
-    produto_catalogo = produto_catalogo.sort_values(["produto_norm", "produto_conciso"])
-    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
+
+    suplementos_df = pd.DataFrame(PRODUCT_SUPPLEMENTS)
+    if not suplementos_df.empty:
+        suplementos_df["produto_norm"] = suplementos_df["produto_norm"].apply(normalize_text)
+        produto_catalogo = pd.concat([produto_catalogo, suplementos_df], ignore_index=True)
 
     if PRODUCT_ALIASES:
         produto_catalogo["produto_norm"] = produto_catalogo["produto_norm"].replace(
@@ -538,6 +541,9 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     produto_catalogo[["cadeia", "subcadeia"]] = produto_catalogo[
         ["cadeia", "subcadeia"]
     ].fillna("Não classificado")
+
+    produto_catalogo = produto_catalogo.sort_values(["produto_norm", "produto_conciso"])
+    produto_catalogo = produto_catalogo.drop_duplicates("produto_norm", keep="first")
 
     produto_correcoes = pd.read_excel(
         PRODUCT_LIST_FILE,
