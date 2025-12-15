@@ -508,12 +508,30 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "valor": "v", "producao": "p", "area": "ar"
     })
 
+    # Dados por ano-produto-regional (TODAS AS DIMENSÕES CRUZADAS)
+    by_ano_produto_regional = data.groupby([
+        "ano", "produto_conciso", "cadeia", "subcadeia", "regional_idr", "meso_idr"
+    ]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_produto_regional["valor"] = by_ano_produto_regional["valor"].round(0).astype(int)
+    by_ano_produto_regional["producao"] = by_ano_produto_regional["producao"].round(0).astype(int)
+    by_ano_produto_regional["area"] = by_ano_produto_regional["area"].round(0).astype(int)
+    by_ano_produto_regional = by_ano_produto_regional.rename(columns={
+        "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
+        "regional_idr": "r", "meso_idr": "m",
+        "valor": "v", "producao": "p", "area": "ar"
+    })
+
     return {
         "mapData": by_ano_municipio.to_dict(orient="records"),
         "byAnoCadeia": by_ano_cadeia.to_dict(orient="records"),
         "byAnoSubcadeia": by_ano_subcadeia.to_dict(orient="records"),
         "byAnoProduto": by_ano_produto.to_dict(orient="records"),
         "byAnoRegional": by_ano_regional.to_dict(orient="records"),
+        "byAnoProdutoRegional": by_ano_produto_regional.to_dict(orient="records"),
     }
 
 
