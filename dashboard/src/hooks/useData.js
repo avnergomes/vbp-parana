@@ -235,23 +235,48 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       byMeso = aggregated.byMeso;
     }
 
-    // === POR MUNICÍPIO (mapData não tem dimensão de produto, então filtra apenas por ano e região) ===
-    const filteredMapData = detailed.mapData.filter(item => {
-      if (item.a < anoMin || item.a > anoMax) return false;
-      if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
-      if (targetMesosSet.size > 0 && regionalToMeso[item.r] && !targetMesosSet.has(regionalToMeso[item.r])) return false;
-      return true;
-    });
-
+    // === POR MUNICÍPIO ===
+    // Usa byAnoProdutoMunicipio quando há filtros de produto para granularidade completa
+    // Caso contrário usa mapData (mais leve, sem dimensão de produto)
     const mapByMunicipio = {};
-    filteredMapData.forEach(item => {
-      if (!mapByMunicipio[item.c]) {
-        mapByMunicipio[item.c] = { cod: item.c, nome: item.m, regional: item.r, valor: 0, producao: 0, area: 0 };
-      }
-      mapByMunicipio[item.c].valor += item.v;
-      mapByMunicipio[item.c].producao += item.p;
-      mapByMunicipio[item.c].area += item.ar;
-    });
+
+    if (hasProdutoFilterAny && detailed.byAnoProdutoMunicipio) {
+      // Filtrar dataset com granularidade município + produto
+      const filteredMapData = detailed.byAnoProdutoMunicipio.filter(item => {
+        if (item.a < anoMin || item.a > anoMax) return false;
+        if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
+        if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
+        if (hasProdutoFilter && !produtos.includes(item.n)) return false;
+        if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
+        return true;
+      });
+
+      filteredMapData.forEach(item => {
+        if (!mapByMunicipio[item.cod]) {
+          mapByMunicipio[item.cod] = { cod: item.cod, nome: item.m, regional: item.r, valor: 0, producao: 0, area: 0 };
+        }
+        mapByMunicipio[item.cod].valor += item.v;
+        mapByMunicipio[item.cod].producao += item.p;
+        mapByMunicipio[item.cod].area += item.ar;
+      });
+    } else {
+      // Usar mapData simples (sem filtros de produto)
+      const filteredMapData = detailed.mapData.filter(item => {
+        if (item.a < anoMin || item.a > anoMax) return false;
+        if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
+        if (targetMesosSet.size > 0 && regionalToMeso[item.r] && !targetMesosSet.has(regionalToMeso[item.r])) return false;
+        return true;
+      });
+
+      filteredMapData.forEach(item => {
+        if (!mapByMunicipio[item.c]) {
+          mapByMunicipio[item.c] = { cod: item.c, nome: item.m, regional: item.r, valor: 0, producao: 0, area: 0 };
+        }
+        mapByMunicipio[item.c].valor += item.v;
+        mapByMunicipio[item.c].producao += item.p;
+        mapByMunicipio[item.c].area += item.ar;
+      });
+    }
 
     // === HIERARCHY para treemap ===
     let hierarchy;

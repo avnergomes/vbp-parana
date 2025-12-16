@@ -19,20 +19,32 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
       color: '#22c55e',
       label: 'Valor (R$)',
       formatter: (v) => formatCurrency(v),
+      yAxisId: 'left',
     },
     producao: {
       color: '#0ea5e9',
       label: 'Produção',
       formatter: (v) => formatNumber(v),
+      yAxisId: 'right',
     },
     area: {
       color: '#f59e0b',
       label: 'Área (ha)',
       formatter: (v) => formatNumber(v, 'ha'),
+      yAxisId: 'right',
     },
   };
 
   const config = metricConfig[metric];
+
+  // Função para formatar valores grandes de forma compacta
+  const formatCompact = (value) => {
+    if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`;
+    if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
+    if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+    if (value >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+    return value.toFixed(0);
+  };
 
   return (
     <div className="chart-container">
@@ -45,7 +57,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+          <LineChart data={chartData} margin={{ top: 20, right: 80, left: 20, bottom: 10 }}>
             <defs>
               <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -67,11 +79,35 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
               tickLine={false}
               axisLine={{ stroke: '#e5e7eb' }}
             />
+            {/* Eixo Y esquerdo - Valor (R$) */}
             <YAxis
-              tick={{ fontSize: 12, fill: '#6b7280' }}
+              yAxisId="left"
+              orientation="left"
+              tick={{ fontSize: 11, fill: '#22c55e' }}
               tickLine={false}
-              axisLine={{ stroke: '#e5e7eb' }}
-              tickFormatter={(value) => formatNumber(value)}
+              axisLine={{ stroke: '#22c55e', strokeWidth: 2 }}
+              tickFormatter={(value) => formatCompact(value)}
+              label={{
+                value: 'Valor (R$)',
+                angle: -90,
+                position: 'insideLeft',
+                style: { textAnchor: 'middle', fill: '#22c55e', fontSize: 12 }
+              }}
+            />
+            {/* Eixo Y direito - Produção e Área */}
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#0ea5e9' }}
+              tickLine={false}
+              axisLine={{ stroke: '#0ea5e9', strokeWidth: 2 }}
+              tickFormatter={(value) => formatCompact(value)}
+              label={{
+                value: 'Produção / Área',
+                angle: 90,
+                position: 'insideRight',
+                style: { textAnchor: 'middle', fill: '#0ea5e9', fontSize: 12 }
+              }}
             />
             <Tooltip
               contentStyle={{
@@ -93,6 +129,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
               formatter={(value) => metricConfig[value]?.label || value}
             />
             <Line
+              yAxisId="left"
               type="monotone"
               dataKey="valor"
               stroke="#22c55e"
@@ -101,6 +138,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
               activeDot={{ r: 6, fill: '#22c55e', strokeWidth: 2, stroke: 'white' }}
             />
             <Line
+              yAxisId="right"
               type="monotone"
               dataKey="producao"
               stroke="#0ea5e9"
@@ -109,6 +147,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
               activeDot={{ r: 5, fill: '#0ea5e9', strokeWidth: 2, stroke: 'white' }}
             />
             <Line
+              yAxisId="right"
               type="monotone"
               dataKey="area"
               stroke="#f59e0b"
@@ -121,19 +160,20 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
       </div>
 
       <div className="flex justify-center gap-6 mt-4">
-        <LegendItem color="#22c55e" label="Valor (R$)" />
-        <LegendItem color="#0ea5e9" label="Produção" />
-        <LegendItem color="#f59e0b" label="Área (ha)" />
+        <LegendItem color="#22c55e" label="Valor (R$)" axis="Eixo esquerdo" />
+        <LegendItem color="#0ea5e9" label="Produção" axis="Eixo direito" />
+        <LegendItem color="#f59e0b" label="Área (ha)" axis="Eixo direito" />
       </div>
     </div>
   );
 }
 
-function LegendItem({ color, label }) {
+function LegendItem({ color, label, axis }) {
   return (
     <div className="flex items-center gap-2">
       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
       <span className="text-sm text-earth-600">{label}</span>
+      {axis && <span className="text-xs text-earth-400">({axis})</span>}
     </div>
   );
 }

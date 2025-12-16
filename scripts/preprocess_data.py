@@ -525,6 +525,25 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "valor": "v", "producao": "p", "area": "ar"
     })
 
+    # Dados por ano-produto-município (para filtrar mapa por produto)
+    by_ano_produto_municipio = data.groupby([
+        "ano", "produto_conciso", "cadeia", "subcadeia", "cod_ibge", "municipio_oficial", "regional_idr"
+    ]).agg({
+        "valor": "sum",
+        "producao": "sum",
+        "area": "sum"
+    }).reset_index()
+    by_ano_produto_municipio["valor"] = by_ano_produto_municipio["valor"].round(0).astype(int)
+    by_ano_produto_municipio["producao"] = by_ano_produto_municipio["producao"].round(0).astype(int)
+    by_ano_produto_municipio["area"] = by_ano_produto_municipio["area"].round(0).astype(int)
+    # Remover registros com cod_ibge vazio
+    by_ano_produto_municipio = by_ano_produto_municipio[by_ano_produto_municipio["cod_ibge"] != ""]
+    by_ano_produto_municipio = by_ano_produto_municipio.rename(columns={
+        "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
+        "cod_ibge": "cod", "municipio_oficial": "m", "regional_idr": "r",
+        "valor": "v", "producao": "p", "area": "ar"
+    })
+
     return {
         "mapData": by_ano_municipio.to_dict(orient="records"),
         "byAnoCadeia": by_ano_cadeia.to_dict(orient="records"),
@@ -532,6 +551,7 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "byAnoProduto": by_ano_produto.to_dict(orient="records"),
         "byAnoRegional": by_ano_regional.to_dict(orient="records"),
         "byAnoProdutoRegional": by_ano_produto_regional.to_dict(orient="records"),
+        "byAnoProdutoMunicipio": by_ano_produto_municipio.to_dict(orient="records"),
     }
 
 
