@@ -8,10 +8,6 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
   const layerRef = useRef(null);
   const [selectedMetric, setSelectedMetric] = useState(metric);
 
-  // Verifica se há filtros de produto ativos (usa dados por regional)
-  const hasProdutoFilter = data?.hasProdutoFilter || false;
-
-  // Dados por município (quando não há filtros de produto)
   const municipioData = useMemo(() => {
     if (!data?.byMunicipio) return {};
     const map = {};
@@ -23,30 +19,14 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
     return map;
   }, [data]);
 
-  // Dados por regional (quando há filtros de produto)
-  const regionalData = useMemo(() => {
-    if (!data?.byRegional) return {};
-    const map = {};
-    data.byRegional.forEach(item => {
-      if (item.regional_idr) {
-        map[item.regional_idr] = item;
-      }
-    });
-    return map;
-  }, [data]);
-
   const { minVal, maxVal } = useMemo(() => {
-    // Usa dados por regional quando filtros de produto estão ativos
-    const sourceData = hasProdutoFilter ? data?.byRegional : data?.byMunicipio;
-    if (!sourceData?.length) return { minVal: 0, maxVal: 1 };
-
-    const valueKey = hasProdutoFilter ? selectedMetric : selectedMetric;
-    const values = sourceData.map(d => d[valueKey] || 0).filter(v => v > 0);
+    if (!data?.byMunicipio?.length) return { minVal: 0, maxVal: 1 };
+    const values = data.byMunicipio.map(d => d[selectedMetric] || 0).filter(v => v > 0);
     return {
       minVal: Math.min(...values),
       maxVal: Math.max(...values),
     };
-  }, [data, selectedMetric, hasProdutoFilter]);
+  }, [data, selectedMetric]);
 
   useEffect(() => {
     if (!mapRef.current || !geoData || mapInstanceRef.current) return;
@@ -108,18 +88,8 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
 
       const style = (feature) => {
         const codIbge = feature.properties?.CodIbge;
-        const regional = feature.properties?.RegIdr;
-
-        let value = 0;
-        if (hasProdutoFilter) {
-          // Usa dados por regional quando filtros de produto estão ativos
-          const rData = regionalData[regional];
-          value = rData ? rData[selectedMetric] : 0;
-        } else {
-          // Usa dados por município
-          const mData = municipioData[codIbge];
-          value = mData ? mData[selectedMetric] : 0;
-        }
+        const mData = municipioData[codIbge];
+        const value = mData ? mData[selectedMetric] : 0;
 
         return {
           fillColor: getColor(value),
@@ -134,29 +104,16 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
         const codIbge = feature.properties?.CodIbge;
         const nome = feature.properties?.Municipio || 'Desconhecido';
         const regional = feature.properties?.RegIdr || '-';
+        const mData = municipioData[codIbge];
 
-        let valor = 0, producao = 0, area = 0;
-        let aggregationNote = '';
-
-        if (hasProdutoFilter) {
-          // Usa dados por regional quando filtros de produto estão ativos
-          const rData = regionalData[regional];
-          valor = rData?.valor || 0;
-          producao = rData?.producao || 0;
-          area = rData?.area || 0;
-          aggregationNote = '<div style="font-size: 10px; color: #9ca3af; margin-bottom: 6px; font-style: italic;">Dados agregados por regional (filtro de produto ativo)</div>';
-        } else {
-          const mData = municipioData[codIbge];
-          valor = mData?.valor || 0;
-          producao = mData?.producao || 0;
-          area = mData?.area || 0;
-        }
+        const valor = mData?.valor || 0;
+        const producao = mData?.producao || 0;
+        const area = mData?.area || 0;
 
         layer.bindTooltip(`
           <div style="font-family: system-ui; min-width: 180px;">
             <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #166534;">${nome}</div>
             <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">${regional}</div>
-            ${aggregationNote}
             <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
               <span style="color: #6b7280;">Valor:</span>
               <span style="font-weight: 500; color: #166534;">${formatCurrency(valor)}</span>
@@ -196,7 +153,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
 
       layerRef.current = geoLayer;
     });
-  }, [geoData, municipioData, regionalData, selectedMetric, minVal, maxVal, hasProdutoFilter]);
+  }, [geoData, municipioData, selectedMetric, minVal, maxVal]);
 
   const metricOptions = [
     { value: 'valor', label: 'Valor (R$)' },
@@ -248,15 +205,6 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
       <p className="text-xs text-earth-400 text-center mt-2">
         Passe o mouse sobre um município para ver os detalhes
       </p>
-
-      {hasProdutoFilter && (
-        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-xs text-amber-700 text-center">
-            <strong>Filtro de produto ativo:</strong> Os municípios estão coloridos por regional,
-            pois os dados de produto são agregados a nível de regional.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
