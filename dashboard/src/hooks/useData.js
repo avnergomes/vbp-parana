@@ -329,6 +329,9 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       evolutionCadeia,
       topProdutosAno,
       hierarchy,
+      // Flag para indicar se filtros de produto estão ativos
+      // (nesse caso, o mapa usa dados por regional em vez de por município)
+      hasProdutoFilter: hasProdutoFilterAny,
     };
   }, [aggregated, detailed, geoMap, filters]);
 }
