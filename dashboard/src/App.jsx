@@ -51,14 +51,14 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-earth-50 via-white to-forest-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         <div className="text-center space-y-4 p-8">
           <div className="text-red-500 text-6xl">!</div>
-          <h2 className="text-xl font-bold text-earth-900">Erro ao carregar dados</h2>
-          <p className="text-earth-600">{error}</p>
+          <h2 className="text-xl font-bold text-neutral-900">Erro ao carregar dados</h2>
+          <p className="text-neutral-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-forest-600 text-white rounded-xl hover:bg-forest-700 transition-colors"
+            className="px-6 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
           >
             Tentar novamente
           </button>
@@ -71,7 +71,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-6">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 lg:py-8 w-full space-y-4 md:space-y-6">
         {/* Filters */}
         <Filters
           metadata={aggregated?.metadata}

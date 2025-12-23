@@ -8,14 +8,14 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-earth-50 via-white to-forest-50 min-h-screen;
+    @apply bg-gradient-to-br from-primary-50 via-white to-secondary-50 min-h-screen;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/50;
+    @apply bg-white/90 backdrop-blur-md rounded-2xl shadow-soft border border-primary-100/50;
   }
 
   .card-hover {
@@ -28,15 +28,15 @@
 
   .stat-card::before {
     content: '';
-    @apply absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-forest-500 to-forest-700;
+    @apply absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-primary-500 to-primary-700;
   }
 
   .filter-select {
-    @apply w-full px-4 py-2.5 bg-white border border-earth-200 rounded-xl text-sm
-           focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500
+    @apply w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm
+           focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
            transition-all duration-200 appearance-none cursor-pointer
-           hover:border-forest-400;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2316a34a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+           hover:border-primary-400;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b5cf6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 1.25rem;
@@ -44,20 +44,20 @@
   }
 
   .filter-label {
-    @apply block text-sm font-medium text-earth-700 mb-1.5;
+    @apply block text-sm font-medium text-neutral-700 mb-1.5;
   }
 
   .tab-button {
     @apply px-6 py-3 text-sm font-medium rounded-xl transition-all duration-200
-           text-earth-600 hover:text-forest-700 hover:bg-forest-50;
+           text-neutral-600 hover:text-primary-700 hover:bg-primary-50;
   }
 
   .tab-button.active {
-    @apply bg-gradient-to-r from-forest-600 to-forest-700 text-white shadow-lg shadow-forest-500/25;
+    @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/25;
   }
 
   .section-title {
-    @apply text-xl font-display font-bold text-earth-900 flex items-center gap-3;
+    @apply text-xl font-display font-bold text-neutral-900 flex items-center gap-3;
   }
 
   .chart-container {
@@ -65,12 +65,12 @@
   }
 
   .kpi-value {
-    @apply text-3xl font-display font-bold bg-gradient-to-r from-forest-700 to-forest-600
+    @apply text-3xl font-display font-bold bg-gradient-to-r from-primary-600 to-secondary-500
            bg-clip-text text-transparent;
   }
 
   .kpi-label {
-    @apply text-sm font-medium text-earth-500 uppercase tracking-wide;
+    @apply text-sm font-medium text-neutral-500 uppercase tracking-wide;
   }
 
   .badge {
@@ -78,15 +78,15 @@
   }
 
   .badge-green {
-    @apply bg-forest-100 text-forest-800;
+    @apply bg-primary-100 text-primary-800;
   }
 
   .badge-yellow {
-    @apply bg-harvest-100 text-harvest-800;
+    @apply bg-accent-100 text-accent-800;
   }
 
   .badge-blue {
-    @apply bg-water-100 text-water-800;
+    @apply bg-secondary-100 text-secondary-800;
   }
 }
 
@@ -97,7 +97,7 @@
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.forest.300') transparent;
+    scrollbar-color: theme('colors.primary.300') transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -110,7 +110,7 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: theme('colors.forest.300');
+    background-color: theme('colors.primary.300');
     border-radius: 3px;
   }
 }
