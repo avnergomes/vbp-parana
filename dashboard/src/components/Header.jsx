@@ -2,7 +2,7 @@ import { Leaf, BarChart3, MapPin, TrendingUp } from 'lucide-react';
 
 export default function Header() {
   return (
-    <header className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 text-white">
+    <header className="relative overflow-hidden bg-gradient-to-br from-dark-900 via-secondary-700 to-primary-600 text-white">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -24,13 +24,13 @@ export default function Header() {
           {/* Logo and title */}
           <div className="flex items-center gap-3 md:gap-4">
             <div className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex-shrink-0">
-              <Leaf className="w-6 h-6 md:w-8 md:h-8 text-primary-100" />
+              <Leaf className="w-6 h-6 md:w-8 md:h-8 text-primary-200" />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl lg:text-3xl font-display font-bold tracking-tight">
                 VBP Paraná
               </h1>
-              <p className="text-primary-100 text-xs md:text-sm lg:text-base font-medium">
+              <p className="text-accent-200 text-xs md:text-sm lg:text-base font-medium">
                 Inteligência Territorial da Produção Agropecuária
               </p>
             </div>
@@ -46,7 +46,7 @@ export default function Header() {
 
         {/* Description banner */}
         <div className="mt-4 md:mt-6 p-3 md:p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-          <p className="text-primary-50 text-xs md:text-sm leading-relaxed">
+          <p className="text-neutral-50 text-xs md:text-sm leading-relaxed">
             Explore dados do <strong>Valor Bruto da Produção</strong> do estado do Paraná (2012-2024).
             Analise tendências por município, regional, cadeia produtiva e produto.
             Dados oficiais processados para inteligência territorial.
@@ -70,10 +70,10 @@ export default function Header() {
 function QuickStat({ icon: Icon, label, sublabel }) {
   return (
     <div className="flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 bg-white/10 backdrop-blur-sm rounded-lg md:rounded-xl border border-white/20">
-      <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary-200 flex-shrink-0" />
+      <Icon className="w-4 h-4 md:w-5 md:h-5 text-accent-200 flex-shrink-0" />
       <div>
         <div className="text-sm md:text-lg font-bold">{label}</div>
-        <div className="text-[10px] md:text-xs text-primary-200">{sublabel}</div>
+        <div className="text-[10px] md:text-xs text-accent-200">{sublabel}</div>
       </div>
     </div>
   );

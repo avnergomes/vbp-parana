@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-primary-50 via-white to-secondary-50 min-h-screen;
+    @apply bg-gradient-to-br from-neutral-50 via-accent-50 to-primary-50 min-h-screen;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
@@ -36,7 +36,7 @@
            focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500
            transition-all duration-200 appearance-none cursor-pointer
            hover:border-primary-400;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238b5cf6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2362929E'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 1.25rem;
@@ -57,7 +57,7 @@
   }
 
   .section-title {
-    @apply text-xl font-display font-bold text-neutral-900 flex items-center gap-3;
+    @apply text-xl font-display font-bold text-dark-900 flex items-center gap-3;
   }
 
   .chart-container {
@@ -65,7 +65,7 @@
   }
 
   .kpi-value {
-    @apply text-3xl font-display font-bold bg-gradient-to-r from-primary-600 to-secondary-500
+    @apply text-3xl font-display font-bold bg-gradient-to-r from-primary-600 to-secondary-600
            bg-clip-text text-transparent;
   }
 
