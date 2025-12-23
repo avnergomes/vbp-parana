@@ -88,8 +88,8 @@ export default function Footer() {
               className="flex items-center gap-1.5 text-dark-500 hover:text-primary-600 transition-colors group"
               title="Desenvolvido por Avner Gomes"
             >
-              <img src="/assets/logo.svg" alt="AG" className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
-              <span className="text-[10px]">Desenvolvido por AG</span>
+              <img src="/vbp-parana/assets/logo.svg" alt="AG" className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+              <span className="text-[10px] md:text-xs">Desenvolvido por Avner Gomes</span>
             </a>
           </div>
           <div className="flex items-center flex-wrap justify-center gap-2">
