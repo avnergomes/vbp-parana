@@ -90,8 +90,9 @@ export default function Filters({
       return Array.from(munis).sort();
     }
 
-    // Senão, mostrar todos
-    return metadata.filters?.municipios || [];
+    // Senão, mostrar todos - metadata.filters.municipios é array de objetos
+    if (!metadata.filters?.municipios) return [];
+    return metadata.filters.municipios.map(m => m.municipio_oficial).sort();
   }, [geoMap, mesos, regionais, metadata]);
 
   const handleReset = () => {
