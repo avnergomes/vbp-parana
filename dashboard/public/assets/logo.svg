@@ -1,0 +1,26 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="58" fill="url(#gradient)" stroke="url(#borderGradient)" stroke-width="2"/>
+
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="120" y2="120">
+      <stop offset="0%" stop-color="#667eea"/>
+      <stop offset="100%" stop-color="#764ba2"/>
+    </linearGradient>
+    <linearGradient id="borderGradient" x1="0" y1="0" x2="120" y2="120">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0" y1="0" x2="100" y2="100">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f3e8ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Letters A and G -->
+  <text x="60" y="75" font-family="'Inter', 'Arial', sans-serif" font-size="48" font-weight="700" text-anchor="middle" fill="url(#textGradient)">AG</text>
+
+  <!-- Accent Line -->
+  <line x1="30" y1="85" x2="90" y2="85" stroke="url(#textGradient)" stroke-width="2" stroke-linecap="round"/>
+</svg>
