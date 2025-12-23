@@ -79,6 +79,7 @@ export default function App() {
           geoMap={geoMap}
           filters={filters}
           onFiltersChange={setFilters}
+          filteredData={filteredData}
         />
 
         {/* KPIs */}
