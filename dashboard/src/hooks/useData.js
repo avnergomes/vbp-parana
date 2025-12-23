@@ -75,13 +75,13 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
   return useMemo(() => {
     if (!aggregated || !detailed) return null;
 
-    const { anos, mesos, regionais, cadeias, subcadeias, produtos } = filters;
+    const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
     const [anoMin, anoMax] = anos;
     const metadata = aggregated.metadata;
 
     // Determinar se há filtros ativos
     const hasYearFilter = anoMin !== metadata.anoMin || anoMax !== metadata.anoMax;
-    const hasGeoFilter = mesos.length > 0 || regionais.length > 0;
+    const hasGeoFilter = mesos.length > 0 || regionais.length > 0 || municipios.length > 0;
     const hasCadeiaFilter = cadeias.length > 0;
     const hasSubcadeiaFilter = subcadeias.length > 0;
     const hasProdutoFilter = produtos.length > 0;
@@ -110,17 +110,81 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       });
     }
 
-    // === FILTRAR DATASET CRUZADO (byAnoProdutoRegional) ===
-    // Este é o dataset principal que cruza TODAS as dimensões
-    const filteredCrossData = detailed.byAnoProdutoRegional.filter(item => {
-      if (item.a < anoMin || item.a > anoMax) return false;
-      if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
-      if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
-      if (hasProdutoFilter && !produtos.includes(item.n)) return false;
-      if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
-      if (targetMesosSet.size > 0 && !targetMesosSet.has(item.m)) return false;
-      return true;
-    });
+    // Criar mapeamento de município -> regional (para filtro de município)
+    const municipioToRegional = {};
+    if (geoMap) {
+      Object.entries(geoMap).forEach(([meso, data]) => {
+        Object.entries(data.municipios || {}).forEach(([regional, munList]) => {
+          munList.forEach(mun => {
+            municipioToRegional[mun.municipio_oficial] = regional;
+          });
+        });
+      });
+    }
+
+    // Se há filtro de municípios, derivar regionais deles
+    const targetMunicipiosSet = new Set(municipios);
+    let effectiveTargetRegionais = targetRegionais;
+    if (municipios.length > 0) {
+      const regionaisFromMunicipios = municipios
+        .map(mun => municipioToRegional[mun])
+        .filter(r => r); // Remove nulls
+      effectiveTargetRegionais = regionaisFromMunicipios;
+    }
+    const effectiveTargetRegionaisSet = new Set(effectiveTargetRegionais);
+
+    // === FILTRAR DATASET CRUZADO ===
+    // Quando há filtro de município, usar byAnoProdutoMunicipio para maior precisão
+    // Caso contrário, usar byAnoProdutoRegional
+    let filteredCrossData;
+
+    if (municipios.length > 0 && detailed.byAnoProdutoMunicipio) {
+      // Usar dataset de município quando há filtro de município
+      filteredCrossData = detailed.byAnoProdutoMunicipio.filter(item => {
+        if (item.a < anoMin || item.a > anoMax) return false;
+        if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
+        if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
+        if (hasProdutoFilter && !produtos.includes(item.n)) return false;
+        if (!targetMunicipiosSet.has(item.m)) return false; // m = municipio_oficial
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return false;
+        return true;
+      });
+
+      // Converter para formato compatível com byAnoProdutoRegional
+      // Agrupando por ano, produto, cadeia, subcadeia, regional, meso
+      const regionalGroups = {};
+      filteredCrossData.forEach(item => {
+        const key = `${item.a}|${item.n}|${item.c}|${item.s}|${item.r}`;
+        if (!regionalGroups[key]) {
+          regionalGroups[key] = {
+            a: item.a,
+            n: item.n,
+            c: item.c,
+            s: item.s,
+            r: item.r,
+            m: regionalToMeso[item.r] || '',
+            v: 0,
+            p: 0,
+            ar: 0
+          };
+        }
+        regionalGroups[key].v += item.v;
+        regionalGroups[key].p += item.p;
+        regionalGroups[key].ar += item.ar;
+      });
+      filteredCrossData = Object.values(regionalGroups);
+    } else {
+      // Usar dataset regional padrão
+      filteredCrossData = detailed.byAnoProdutoRegional.filter(item => {
+        if (item.a < anoMin || item.a > anoMax) return false;
+        if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
+        if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
+        if (hasProdutoFilter && !produtos.includes(item.n)) return false;
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return false;
+        if (targetMesosSet.size > 0 && !targetMesosSet.has(item.m)) return false;
+        return true;
+      });
+    }
 
     // === SÉRIE TEMPORAL ===
     let timeSeries;
@@ -236,18 +300,19 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     }
 
     // === POR MUNICÍPIO ===
-    // Usa byAnoProdutoMunicipio quando há filtros de produto para granularidade completa
+    // Usa byAnoProdutoMunicipio quando há filtros de produto ou município
     // Caso contrário usa mapData (mais leve, sem dimensão de produto)
     const mapByMunicipio = {};
 
-    if (hasProdutoFilterAny && detailed.byAnoProdutoMunicipio) {
+    if ((hasProdutoFilterAny || municipios.length > 0) && detailed.byAnoProdutoMunicipio) {
       // Filtrar dataset com granularidade município + produto
       const filteredMapData = detailed.byAnoProdutoMunicipio.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
         if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
         if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
         if (hasProdutoFilter && !produtos.includes(item.n)) return false;
-        if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
+        if (targetMunicipiosSet.size > 0 && !targetMunicipiosSet.has(item.m)) return false;
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return false;
         return true;
       });
 
@@ -260,10 +325,11 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
         mapByMunicipio[item.cod].area += item.ar;
       });
     } else {
-      // Usar mapData simples (sem filtros de produto)
+      // Usar mapData simples (sem filtros de produto ou município)
       const filteredMapData = detailed.mapData.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
-        if (targetRegionaisSet.size > 0 && !targetRegionaisSet.has(item.r)) return false;
+        if (targetMunicipiosSet.size > 0 && !targetMunicipiosSet.has(item.m)) return false;
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return false;
         if (targetMesosSet.size > 0 && regionalToMeso[item.r] && !targetMesosSet.has(regionalToMeso[item.r])) return false;
         return true;
       });

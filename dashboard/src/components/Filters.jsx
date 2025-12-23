@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Filter, ChevronDown, ChevronUp, X, RotateCcw } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp, X, RotateCcw, Download } from 'lucide-react';
 
 export default function Filters({
   metadata,
   produtoMap,
   geoMap,
   filters,
-  onFiltersChange
+  onFiltersChange,
+  filteredData
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -60,6 +61,39 @@ export default function Filters({
     return Array.from(regs).sort();
   }, [geoMap, mesos, metadata]);
 
+  const availableMunicipios = useMemo(() => {
+    if (!geoMap) return [];
+
+    // Se há regionais selecionadas, mostrar municípios dessas regionais
+    if (regionais.length > 0) {
+      const munis = new Set();
+      Object.entries(geoMap).forEach(([meso, data]) => {
+        Object.entries(data.municipios || {}).forEach(([regional, munList]) => {
+          if (regionais.includes(regional)) {
+            munList.forEach(mun => munis.add(mun.municipio_oficial));
+          }
+        });
+      });
+      return Array.from(munis).sort();
+    }
+
+    // Se há mesos selecionadas, mostrar todos municípios dessas mesos
+    if (mesos.length > 0) {
+      const munis = new Set();
+      mesos.forEach(meso => {
+        if (geoMap[meso]) {
+          Object.values(geoMap[meso].municipios || {}).forEach(munList => {
+            munList.forEach(mun => munis.add(mun.municipio_oficial));
+          });
+        }
+      });
+      return Array.from(munis).sort();
+    }
+
+    // Senão, mostrar todos
+    return metadata.filters?.municipios || [];
+  }, [geoMap, mesos, regionais, metadata]);
+
   const handleReset = () => {
     onFiltersChange({
       anos: [metadata.anoMin, metadata.anoMax],
@@ -70,6 +104,70 @@ export default function Filters({
       subcadeias: [],
       produtos: [],
     });
+  };
+
+  const handleExportCSV = () => {
+    if (!filteredData) return;
+
+    // Preparar dados para exportação
+    const { byMunicipio, byProduto, byRegional, timeSeries, totals } = filteredData;
+
+    // Criar CSV com múltiplas seções
+    let csvContent = '';
+
+    // Seção 1: Totais
+    csvContent += 'TOTAIS\n';
+    csvContent += 'Métrica,Valor\n';
+    csvContent += `Valor Total (R$),${totals.valor.toLocaleString('pt-BR')}\n`;
+    csvContent += `Produção Total,${totals.producao.toLocaleString('pt-BR')}\n`;
+    csvContent += `Área Total (ha),${totals.area.toLocaleString('pt-BR')}\n`;
+    csvContent += '\n';
+
+    // Seção 2: Série Temporal
+    csvContent += 'SÉRIE TEMPORAL\n';
+    csvContent += 'Ano,Valor (R$),Produção,Área (ha)\n';
+    timeSeries.forEach(row => {
+      csvContent += `${row.ano},${row.valor},${row.producao},${row.area}\n`;
+    });
+    csvContent += '\n';
+
+    // Seção 3: Por Produto
+    csvContent += 'POR PRODUTO\n';
+    csvContent += 'Produto,Cadeia,Subcadeia,Valor (R$),Produção,Área (ha)\n';
+    byProduto.forEach(row => {
+      csvContent += `"${row.produto_conciso}","${row.cadeia}","${row.subcadeia}",${row.valor},${row.producao},${row.area}\n`;
+    });
+    csvContent += '\n';
+
+    // Seção 4: Por Regional
+    csvContent += 'POR REGIONAL\n';
+    csvContent += 'Regional,Mesorregião,Valor (R$),Produção,Área (ha)\n';
+    byRegional.forEach(row => {
+      csvContent += `"${row.regional_idr}","${row.meso_idr}",${row.valor},${row.producao},${row.area}\n`;
+    });
+    csvContent += '\n';
+
+    // Seção 5: Por Município
+    csvContent += 'POR MUNICÍPIO\n';
+    csvContent += 'Município,Código IBGE,Regional,Valor (R$),Produção,Área (ha)\n';
+    byMunicipio.forEach(row => {
+      csvContent += `"${row.nome}","${row.cod}","${row.regional}",${row.valor},${row.producao},${row.area}\n`;
+    });
+
+    // Criar blob e download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    // Nome do arquivo com data e filtros aplicados
+    const date = new Date().toISOString().split('T')[0];
+    const filterSuffix = hasActiveFilters ? '_filtrado' : '_completo';
+    link.setAttribute('href', url);
+    link.setAttribute('download', `vbp_parana_${date}${filterSuffix}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const hasActiveFilters =
@@ -96,6 +194,15 @@ export default function Filters({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-forest-600 hover:bg-forest-700
+                       rounded-lg transition-colors"
+            title="Exportar dados filtrados em CSV"
+          >
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </button>
           {hasActiveFilters && (
             <button
               onClick={handleReset}
@@ -166,6 +273,17 @@ export default function Filters({
               selected={regionais}
               onChange={(val) => onFiltersChange({ ...filters, regionais: val, municipios: [] })}
               placeholder="Todas"
+            />
+          </div>
+
+          {/* Município */}
+          <div>
+            <label className="filter-label">Município</label>
+            <MultiSelect
+              options={availableMunicipios}
+              selected={municipios}
+              onChange={(val) => onFiltersChange({ ...filters, municipios: val })}
+              placeholder="Todos"
             />
           </div>
 
