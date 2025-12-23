@@ -88,7 +88,7 @@ export default function Footer() {
               className="flex items-center gap-1.5 text-dark-500 hover:text-primary-600 transition-colors group"
               title="Desenvolvido por Avner Gomes"
             >
-              <img src="/vbp-parana/assets/logo.svg" alt="AG" className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+              <img src="/vbp-parana/assets/logo.png" alt="Avner Gomes" className="w-5 h-5 md:w-6 md:h-6 rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
               <span className="text-[10px] md:text-xs">Desenvolvido por Avner Gomes</span>
             </a>
           </div>
