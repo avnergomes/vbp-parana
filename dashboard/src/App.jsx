@@ -51,11 +51,11 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 via-accent-50 to-primary-50">
         <div className="text-center space-y-4 p-8">
           <div className="text-red-500 text-6xl">!</div>
-          <h2 className="text-xl font-bold text-neutral-900">Erro ao carregar dados</h2>
-          <p className="text-neutral-600">{error}</p>
+          <h2 className="text-xl font-bold text-dark-900">Erro ao carregar dados</h2>
+          <p className="text-dark-700">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors"
