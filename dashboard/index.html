@@ -14,5 +14,48 @@
   <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+(function() {
+  const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbxL_UedDsYZEJJxPPIWLdynzfHgIpSKgB8u4U1dLFCpKxO9rmL609WsvdNwYyhtVPk-GA/exec';
+
+  function getSessionId() {
+    let sessionId = sessionStorage.getItem('vbp_session_id');
+    if (!sessionId) {
+      sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      sessionStorage.setItem('vbp_session_id', sessionId);
+    }
+    return sessionId;
+  }
+
+  const visitData = {
+    page: window.location.pathname + window.location.hash,
+    referrer: document.referrer || 'direto',
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    screenWidth: screen.width,
+    screenHeight: screen.height,
+    platform: navigator.platform,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    sessionId: getSessionId()
+  };
+
+  fetch(TRACKING_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(visitData)
+  });
+
+  window.addEventListener('hashchange', function() {
+    visitData.page = window.location.pathname + window.location.hash;
+    fetch(TRACKING_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(visitData)
+    });
+  });
+})();
+</script>
   </body>
 </html>
