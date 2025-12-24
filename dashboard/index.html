@@ -17,44 +17,89 @@
     <script>
 (function() {
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbxL_UedDsYZEJJxPPIWLdynzfHgIpSKgB8u4U1dLFCpKxO9rmL609WsvdNwYyhtVPk-GA/exec';
+  const DEBUG = true; // Mude para false em produção
+
+  function log(message, data) {
+    if (DEBUG) {
+      console.log('[VBP Tracking]', message, data || '');
+    }
+  }
 
   function getSessionId() {
     let sessionId = sessionStorage.getItem('vbp_session_id');
     if (!sessionId) {
       sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       sessionStorage.setItem('vbp_session_id', sessionId);
+      log('Novo sessionId criado:', sessionId);
+    } else {
+      log('SessionId existente:', sessionId);
     }
     return sessionId;
   }
 
-  const visitData = {
-    page: window.location.pathname + window.location.hash,
-    referrer: document.referrer || 'direto',
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    screenWidth: screen.width,
-    screenHeight: screen.height,
-    platform: navigator.platform,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    sessionId: getSessionId()
-  };
+  function trackVisit(page) {
+    const visitData = {
+      page: page || window.location.pathname + window.location.hash,
+      referrer: document.referrer || 'direto',
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      screenWidth: screen.width,
+      screenHeight: screen.height,
+      platform: navigator.platform,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      sessionId: getSessionId(),
+      timestamp: new Date().toISOString()
+    };
 
-  fetch(TRACKING_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(visitData)
-  });
+    log('Enviando dados:', visitData);
 
-  window.addEventListener('hashchange', function() {
-    visitData.page = window.location.pathname + window.location.hash;
     fetch(TRACKING_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(visitData)
+    })
+    .then(() => {
+      log('Requisição enviada com sucesso (no-cors - sem resposta)');
+    })
+    .catch(error => {
+      log('Erro ao enviar:', error);
     });
+  }
+
+  // Rastrear visita inicial
+  log('Inicializando rastreamento');
+  trackVisit();
+
+  // Rastrear mudanças de hash (para rotas #hash)
+  window.addEventListener('hashchange', function() {
+    log('Hash mudou');
+    trackVisit();
   });
+
+  // Rastrear mudanças de rota no React Router (popstate)
+  window.addEventListener('popstate', function() {
+    log('Popstate disparado');
+    setTimeout(() => trackVisit(), 100);
+  });
+
+  // Interceptar pushState e replaceState para React Router
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+
+  history.pushState = function() {
+    originalPushState.apply(this, arguments);
+    log('PushState interceptado');
+    setTimeout(() => trackVisit(), 100);
+  };
+
+  history.replaceState = function() {
+    originalReplaceState.apply(this, arguments);
+    log('ReplaceState interceptado');
+    setTimeout(() => trackVisit(), 100);
+  };
 })();
 </script>
   </body>
