@@ -25,7 +25,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
       color: '#0ea5e9',
       label: 'Produção',
       formatter: (v) => formatNumber(v),
-      yAxisId: 'right',
+      yAxisId: 'center',
     },
     area: {
       color: '#f59e0b',
@@ -57,7 +57,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 80, left: 20, bottom: 10 }}>
+          <LineChart data={chartData} margin={{ top: 20, right: 120, left: 20, bottom: 10 }}>
             <defs>
               <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -94,20 +94,36 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
                 style: { textAnchor: 'middle', fill: '#22c55e', fontSize: 12 }
               }}
             />
-            {/* Eixo Y direito - Produção e Área */}
+            {/* Eixo Y central - Produção */}
             <YAxis
-              yAxisId="right"
+              yAxisId="center"
               orientation="right"
               tick={{ fontSize: 11, fill: '#0ea5e9' }}
               tickLine={false}
               axisLine={{ stroke: '#0ea5e9', strokeWidth: 2 }}
               tickFormatter={(value) => formatCompact(value)}
               label={{
-                value: 'Produção / Área',
+                value: 'Produção',
                 angle: 90,
                 position: 'insideRight',
                 style: { textAnchor: 'middle', fill: '#0ea5e9', fontSize: 12 }
               }}
+            />
+            {/* Eixo Y direito - Área */}
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 11, fill: '#f59e0b' }}
+              tickLine={false}
+              axisLine={{ stroke: '#f59e0b', strokeWidth: 2 }}
+              tickFormatter={(value) => formatCompact(value)}
+              label={{
+                value: 'Área (ha)',
+                angle: 90,
+                position: 'insideRight',
+                style: { textAnchor: 'middle', fill: '#f59e0b', fontSize: 12 }
+              }}
+              dx={50}
             />
             <Tooltip
               contentStyle={{
@@ -138,7 +154,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
               activeDot={{ r: 6, fill: '#22c55e', strokeWidth: 2, stroke: 'white' }}
             />
             <Line
-              yAxisId="right"
+              yAxisId="center"
               type="monotone"
               dataKey="producao"
               stroke="#0ea5e9"
@@ -161,8 +177,8 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
 
       <div className="flex justify-center gap-6 mt-4">
         <LegendItem color="#22c55e" label="Valor (R$)" axis="Eixo esquerdo" />
-        <LegendItem color="#0ea5e9" label="Produção" axis="Eixo direito" />
-        <LegendItem color="#f59e0b" label="Área (ha)" axis="Eixo direito" />
+        <LegendItem color="#0ea5e9" label="Produção" axis="Eixo direito 1" />
+        <LegendItem color="#f59e0b" label="Área (ha)" axis="Eixo direito 2" />
       </div>
     </div>
   );
