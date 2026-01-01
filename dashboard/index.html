@@ -39,6 +39,7 @@
 
   function trackVisit(page) {
     const visitData = {
+      // Dados básicos
       page: page || window.location.pathname + window.location.hash,
       referrer: document.referrer || 'direto',
       userAgent: navigator.userAgent,
@@ -48,7 +49,44 @@
       platform: navigator.platform,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       sessionId: getSessionId(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+
+      // Dispositivo
+      colorDepth: screen.colorDepth || null,
+      pixelRatio: window.devicePixelRatio || 1,
+      viewportWidth: window.innerWidth || null,
+      viewportHeight: window.innerHeight || null,
+      touchSupport: navigator.maxTouchPoints > 0,
+      cpuCores: navigator.hardwareConcurrency || null,
+      deviceMemory: navigator.deviceMemory || null,
+
+      // Navegador
+      vendor: navigator.vendor || 'unknown',
+      cookiesEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack === "1",
+      onlineStatus: navigator.onLine,
+
+      // Conexão (se disponível)
+      connectionType: navigator.connection?.effectiveType || 'unknown',
+      connectionSpeed: navigator.connection?.downlink || null,
+      saveDataMode: navigator.connection?.saveData || false,
+
+      // URL/Página
+      protocol: window.location.protocol,
+      hostname: window.location.hostname,
+      pathname: window.location.pathname,
+      queryString: window.location.search || '',
+      pageTitle: document.title,
+
+      // Performance
+      loadTime: performance.timing.loadEventEnd > 0 ?
+        performance.timing.loadEventEnd - performance.timing.navigationStart : null,
+
+      // Orientação
+      screenOrientation: screen.orientation?.type || 'unknown',
+
+      // Timezone offset
+      timezoneOffset: new Date().getTimezoneOffset()
     };
 
     log('Enviando dados:', visitData);
