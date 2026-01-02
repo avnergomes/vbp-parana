@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { MapPin, Layers } from 'lucide-react';
-import { formatCurrency, formatNumber } from '../utils/format';
+import { formatCurrency, formatNumber, MAP_GRADIENTS } from '../utils/format';
 
 export default function MapChart({ data, geoData, metric = 'valor' }) {
   const mapRef = useRef(null);
@@ -27,6 +27,37 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
       maxVal: Math.max(...values),
     };
   }, [data, selectedMetric]);
+
+  // Gradientes de cores para cada métrica (7 tons do mais claro ao mais escuro)
+  const metricGradients = useMemo(() => ({
+    valor: [
+      '#dcfce7', // verde muito claro
+      '#86efac', // verde claro
+      '#4ade80', // verde médio-claro
+      '#22c55e', // verde médio (cor principal dos gráficos)
+      '#16a34a', // verde médio-escuro
+      '#15803d', // verde escuro
+      '#166534', // verde muito escuro
+    ],
+    producao: [
+      '#e0f2fe', // azul muito claro
+      '#7dd3fc', // azul claro
+      '#38bdf8', // azul médio-claro
+      '#0ea5e9', // azul médio (cor principal dos gráficos)
+      '#0284c7', // azul médio-escuro
+      '#0369a1', // azul escuro
+      '#075985', // azul muito escuro
+    ],
+    area: [
+      '#fef3c7', // amarelo muito claro
+      '#fcd34d', // amarelo claro
+      '#fbbf24', // amarelo médio-claro
+      '#f59e0b', // laranja/amarelo médio (cor principal dos gráficos)
+      '#d97706', // laranja médio-escuro
+      '#b45309', // laranja escuro
+      '#92400e', // laranja muito escuro
+    ],
+  }), []);
 
   useEffect(() => {
     if (!mapRef.current || !geoData || mapInstanceRef.current) return;
@@ -72,15 +103,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
         if (!value || value === 0) return '#f3f4f6';
 
         const normalized = (value - minVal) / (maxVal - minVal);
-        const colors = [
-          '#dcfce7', // lightest green
-          '#86efac',
-          '#4ade80',
-          '#22c55e',
-          '#16a34a',
-          '#15803d',
-          '#166534', // darkest green
-        ];
+        const colors = metricGradients[selectedMetric];
 
         const index = Math.min(Math.floor(normalized * colors.length), colors.length - 1);
         return colors[index];
@@ -110,9 +133,16 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
         const producao = mData?.producao || 0;
         const area = mData?.area || 0;
 
+        // Cores para cada métrica no tooltip
+        const metricColors = {
+          valor: '#166534',    // verde escuro
+          producao: '#075985', // azul escuro
+          area: '#92400e',     // laranja escuro
+        };
+
         layer.bindTooltip(`
           <div style="font-family: system-ui; min-width: 180px;">
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #166534;">${nome}</div>
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: ${metricColors[selectedMetric]};">${nome}</div>
             <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">${regional}</div>
             <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
               <span style="color: #6b7280;">Valor:</span>
@@ -120,11 +150,11 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
               <span style="color: #6b7280;">Produção:</span>
-              <span style="font-weight: 500;">${formatNumber(producao)}</span>
+              <span style="font-weight: 500; color: #075985;">${formatNumber(producao)}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 12px;">
               <span style="color: #6b7280;">Área:</span>
-              <span style="font-weight: 500;">${formatNumber(area)} ha</span>
+              <span style="font-weight: 500; color: #92400e;">${formatNumber(area)} ha</span>
             </div>
           </div>
         `, {
@@ -136,7 +166,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
           mouseover: (e) => {
             e.target.setStyle({
               weight: 3,
-              color: '#166534',
+              color: metricColors[selectedMetric],
               fillOpacity: 0.9,
             });
           },
@@ -153,7 +183,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
 
       layerRef.current = geoLayer;
     });
-  }, [geoData, municipioData, selectedMetric, minVal, maxVal]);
+  }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients]);
 
   const metricOptions = [
     { value: 'valor', label: 'Valor (R$)' },
@@ -195,7 +225,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
       <div className="mt-4 flex items-center justify-center gap-4">
         <span className="text-xs text-earth-500">Menor</span>
         <div className="flex h-3 rounded overflow-hidden">
-          {['#dcfce7', '#86efac', '#4ade80', '#22c55e', '#16a34a', '#15803d', '#166534'].map((color, i) => (
+          {metricGradients[selectedMetric].map((color, i) => (
             <div key={i} className="w-8 h-full" style={{ backgroundColor: color }} />
           ))}
         </div>
