@@ -2,6 +2,18 @@
 """
 Script de preprocessamento dos dados VBP Paraná.
 Converte os arquivos Excel para JSON otimizado para uso no dashboard React.
+
+Conversão de Unidades:
+----------------------
+Para garantir agregações corretas, todas as produções são convertidas para toneladas:
+- TON: 1:1 (já está em toneladas)
+- L: 0.001 (litros → toneladas, assumindo densidade ~1 kg/L para leite)
+- MIL L: 1.0 (mil litros → toneladas, ~1000 kg = 1 ton)
+- KG: 0.001 (quilogramas → toneladas)
+- Unidades sem conversão (UN, CX, DZ, M³, M², VSO, MCO, CAB): 0.0 (não somadas)
+
+Isso evita somar produções de diferentes unidades de medida (ex: toneladas + litros + unidades),
+garantindo valores consistentes nos agregados e visualizações.
 """
 
 import json
@@ -71,6 +83,45 @@ PRODUCT_ALIASES: Dict[str, str] = {
     normalize_text("Arroz de Sequeiro"): normalize_text("Arroz Sequeiro"),
     normalize_text("Brocolos"): normalize_text("Brócolis"),
 }
+
+# Tabela de conversão de unidades para toneladas
+# Fator de conversão: quantidade_em_toneladas = quantidade_original * fator
+UNIT_TO_TON_CONVERSION: Dict[str, float] = {
+    "TON": 1.0,         # Tonelada → Tonelada (1:1)
+    "T": 1.0,           # Tonelada → Tonelada (1:1)
+    "KG": 0.001,        # Quilograma → Tonelada (1 kg = 0.001 ton)
+    "L": 0.001,         # Litro → Tonelada (para leite: ~1 kg/L)
+    "MIL L": 1.0,       # Mil litros → Tonelada (para leite: ~1000 kg = 1 ton)
+    # Unidades sem conversão direta para massa:
+    "UN": 0.0,          # Unidade (não converter)
+    "CX": 0.0,          # Caixa (não converter)
+    "DZ": 0.0,          # Dúzia (não converter)
+    "M³": 0.0,          # Metro cúbico (não converter)
+    "M²": 0.0,          # Metro quadrado (não converter)
+    "VSO": 0.0,         # Vaso (não converter)
+    "MCO": 0.0,         # Maço (não converter)
+    "CAB": 0.0,         # Cabaço (não converter)
+}
+
+
+def convert_to_tons(producao: float, unidade: str) -> float:
+    """
+    Converte quantidade de produção para toneladas.
+
+    Args:
+        producao: Quantidade produzida na unidade original
+        unidade: Unidade de medida (TON, L, KG, etc.)
+
+    Returns:
+        Quantidade em toneladas, ou 0.0 se não houver conversão definida
+    """
+    if pd.isna(producao) or producao == 0:
+        return 0.0
+
+    unidade_upper = str(unidade).upper().strip()
+    fator = UNIT_TO_TON_CONVERSION.get(unidade_upper, 0.0)
+
+    return producao * fator
 
 
 def build_product_correction_map(
@@ -255,10 +306,16 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
     df["cadeia"] = df["cadeia"].fillna("Não classificado")
     df["subcadeia"] = df["subcadeia"].fillna("Não classificado")
 
+    # Converter produção para toneladas
+    df["producao_ton"] = df.apply(
+        lambda row: convert_to_tons(row["producao"], row["unidade"]),
+        axis=1
+    )
+
     # Garantir colunas finais
     required_cols = ["ano", "municipio", "municipio_oficial", "cod_ibge", "regional_idr",
                      "meso_idr", "produto", "produto_conciso", "cadeia", "subcadeia",
-                     "unidade", "valor", "area", "producao"]
+                     "unidade", "valor", "area", "producao", "producao_ton"]
     for col in required_cols:
         if col not in df.columns:
             df[col] = ""
@@ -296,52 +353,59 @@ def generate_aggregated_data(data: pd.DataFrame) -> Dict[str, Any]:
     # 1. Série temporal
     time_series = data.groupby("ano").agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
+    time_series = time_series.rename(columns={"producao_ton": "producao"})
     time_series = time_series.sort_values("ano")
 
     # 2. Por cadeia
     by_cadeia = data.groupby("cadeia").agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_cadeia = by_cadeia.rename(columns={"producao_ton": "producao"})
 
     # 3. Por subcadeia
     by_subcadeia = data.groupby(["cadeia", "subcadeia"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_subcadeia = by_subcadeia.rename(columns={"producao_ton": "producao"})
 
     # 4. Por produto (agregado sem unidade para evitar duplicados)
     by_produto = data.groupby(["produto_conciso", "cadeia", "subcadeia"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_produto = by_produto.rename(columns={"producao_ton": "producao"})
 
     # 5. Por município
     by_municipio = data.groupby(["cod_ibge", "municipio_oficial", "regional_idr", "meso_idr"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_municipio = by_municipio.rename(columns={"producao_ton": "producao"})
 
     # 6. Por regional
     by_regional = data.groupby("regional_idr").agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_regional = by_regional.rename(columns={"producao_ton": "producao"})
 
     # 7. Por mesorregião
     by_meso = data.groupby("meso_idr").agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index().sort_values("valor", ascending=False)
+    by_meso = by_meso.rename(columns={"producao_ton": "producao"})
 
     # 8. Evolução por cadeia (ano x cadeia)
     evolution_cadeia = data.groupby(["ano", "cadeia"]).agg({
@@ -363,16 +427,18 @@ def generate_aggregated_data(data: pd.DataFrame) -> Dict[str, Any]:
     # 11. Hierarquia completa (para sunburst/treemap)
     hierarchy = data.groupby(["cadeia", "subcadeia", "produto_conciso"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
+    hierarchy = hierarchy.rename(columns={"producao_ton": "producao"})
 
     # 12. Dados por ano-município (para o mapa temporal)
     by_ano_municipio = data.groupby(["ano", "cod_ibge", "municipio_oficial"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
+    by_ano_municipio = by_ano_municipio.rename(columns={"producao_ton": "producao"})
 
     # 13. Dados por ano-cadeia-regional
     by_ano_cadeia_regional = data.groupby(["ano", "cadeia", "regional_idr"]).agg({
@@ -399,7 +465,7 @@ def generate_aggregated_data(data: pd.DataFrame) -> Dict[str, Any]:
             "totalProdutos": len(produtos),
             "totalCadeias": len(cadeias),
             "valorTotal": float(data["valor"].sum()),
-            "producaoTotal": float(data["producao"].sum()),
+            "producaoTotal": float(data["producao_ton"].sum()),
             "areaTotal": float(data["area"].sum()),
             "filters": {
                 "anos": anos,
@@ -431,13 +497,13 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
     # Dados por ano-município (para mapa interativo) - arredondar valores
     by_ano_municipio = data.groupby(["ano", "cod_ibge", "municipio_oficial", "regional_idr"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
 
     # Arredondar para reduzir tamanho
     by_ano_municipio["valor"] = by_ano_municipio["valor"].round(0).astype(int)
-    by_ano_municipio["producao"] = by_ano_municipio["producao"].round(0).astype(int)
+    by_ano_municipio["producao_ton"] = by_ano_municipio["producao_ton"].round(0).astype(int)
     by_ano_municipio["area"] = by_ano_municipio["area"].round(0).astype(int)
 
     # Remover registros com cod_ibge vazio
@@ -450,62 +516,62 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "regional_idr": "r",
         "ano": "a",
         "valor": "v",
-        "producao": "p",
+        "producao_ton": "p",
         "area": "ar"
     })
 
     # Dados por ano-cadeia (para filtrar gráficos de cadeia por ano)
     by_ano_cadeia = data.groupby(["ano", "cadeia"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_cadeia["valor"] = by_ano_cadeia["valor"].round(0).astype(int)
-    by_ano_cadeia["producao"] = by_ano_cadeia["producao"].round(0).astype(int)
+    by_ano_cadeia["producao_ton"] = by_ano_cadeia["producao_ton"].round(0).astype(int)
     by_ano_cadeia["area"] = by_ano_cadeia["area"].round(0).astype(int)
     by_ano_cadeia = by_ano_cadeia.rename(columns={
-        "ano": "a", "cadeia": "c", "valor": "v", "producao": "p", "area": "ar"
+        "ano": "a", "cadeia": "c", "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     # Dados por ano-subcadeia
     by_ano_subcadeia = data.groupby(["ano", "cadeia", "subcadeia"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_subcadeia["valor"] = by_ano_subcadeia["valor"].round(0).astype(int)
-    by_ano_subcadeia["producao"] = by_ano_subcadeia["producao"].round(0).astype(int)
+    by_ano_subcadeia["producao_ton"] = by_ano_subcadeia["producao_ton"].round(0).astype(int)
     by_ano_subcadeia["area"] = by_ano_subcadeia["area"].round(0).astype(int)
     by_ano_subcadeia = by_ano_subcadeia.rename(columns={
-        "ano": "a", "cadeia": "c", "subcadeia": "s", "valor": "v", "producao": "p", "area": "ar"
+        "ano": "a", "cadeia": "c", "subcadeia": "s", "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     # Dados por ano-produto
     by_ano_produto = data.groupby(["ano", "produto_conciso", "cadeia", "subcadeia"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_produto["valor"] = by_ano_produto["valor"].round(0).astype(int)
-    by_ano_produto["producao"] = by_ano_produto["producao"].round(0).astype(int)
+    by_ano_produto["producao_ton"] = by_ano_produto["producao_ton"].round(0).astype(int)
     by_ano_produto["area"] = by_ano_produto["area"].round(0).astype(int)
     by_ano_produto = by_ano_produto.rename(columns={
         "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
-        "valor": "v", "producao": "p", "area": "ar"
+        "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     # Dados por ano-regional
     by_ano_regional = data.groupby(["ano", "regional_idr", "meso_idr"]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_regional["valor"] = by_ano_regional["valor"].round(0).astype(int)
-    by_ano_regional["producao"] = by_ano_regional["producao"].round(0).astype(int)
+    by_ano_regional["producao_ton"] = by_ano_regional["producao_ton"].round(0).astype(int)
     by_ano_regional["area"] = by_ano_regional["area"].round(0).astype(int)
     by_ano_regional = by_ano_regional.rename(columns={
         "ano": "a", "regional_idr": "r", "meso_idr": "m",
-        "valor": "v", "producao": "p", "area": "ar"
+        "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     # Dados por ano-produto-regional (TODAS AS DIMENSÕES CRUZADAS)
@@ -513,16 +579,16 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "ano", "produto_conciso", "cadeia", "subcadeia", "regional_idr", "meso_idr"
     ]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_produto_regional["valor"] = by_ano_produto_regional["valor"].round(0).astype(int)
-    by_ano_produto_regional["producao"] = by_ano_produto_regional["producao"].round(0).astype(int)
+    by_ano_produto_regional["producao_ton"] = by_ano_produto_regional["producao_ton"].round(0).astype(int)
     by_ano_produto_regional["area"] = by_ano_produto_regional["area"].round(0).astype(int)
     by_ano_produto_regional = by_ano_produto_regional.rename(columns={
         "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
         "regional_idr": "r", "meso_idr": "m",
-        "valor": "v", "producao": "p", "area": "ar"
+        "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     # Dados por ano-produto-município (para filtrar mapa por produto)
@@ -530,18 +596,18 @@ def generate_detailed_data(data: pd.DataFrame) -> Dict[str, Any]:
         "ano", "produto_conciso", "cadeia", "subcadeia", "cod_ibge", "municipio_oficial", "regional_idr"
     ]).agg({
         "valor": "sum",
-        "producao": "sum",
+        "producao_ton": "sum",
         "area": "sum"
     }).reset_index()
     by_ano_produto_municipio["valor"] = by_ano_produto_municipio["valor"].round(0).astype(int)
-    by_ano_produto_municipio["producao"] = by_ano_produto_municipio["producao"].round(0).astype(int)
+    by_ano_produto_municipio["producao_ton"] = by_ano_produto_municipio["producao_ton"].round(0).astype(int)
     by_ano_produto_municipio["area"] = by_ano_produto_municipio["area"].round(0).astype(int)
     # Remover registros com cod_ibge vazio
     by_ano_produto_municipio = by_ano_produto_municipio[by_ano_produto_municipio["cod_ibge"] != ""]
     by_ano_produto_municipio = by_ano_produto_municipio.rename(columns={
         "ano": "a", "produto_conciso": "n", "cadeia": "c", "subcadeia": "s",
         "cod_ibge": "cod", "municipio_oficial": "m", "regional_idr": "r",
-        "valor": "v", "producao": "p", "area": "ar"
+        "valor": "v", "producao_ton": "p", "area": "ar"
     })
 
     return {
