@@ -204,10 +204,13 @@ function saveToSheet(data) {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
 
-  // Se a planilha não existe, criar e adicionar cabeçalhos
+  // Se a planilha não existe, criar com setupSheet
   if (!sheet) {
+    Logger.log('Planilha não existe. Criando automaticamente...');
     sheet = spreadsheet.insertSheet(SHEET_NAME);
-    sheet.appendRow(COLUMNS);
+
+    // Adicionar headers
+    sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
 
     // Formatar cabeçalho
     const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
@@ -217,6 +220,8 @@ function saveToSheet(data) {
 
     // Congelar primeira linha
     sheet.setFrozenRows(1);
+
+    Logger.log('Planilha criada com ' + COLUMNS.length + ' colunas');
   }
 
   // Preparar array de valores na ordem das colunas
@@ -236,10 +241,16 @@ function saveToSheet(data) {
     return value;
   });
 
-  // Adicionar linha com os dados
-  sheet.appendRow(rowData);
+  // Verificar se o número de valores corresponde ao número de colunas
+  if (rowData.length !== COLUMNS.length) {
+    Logger.log('ERRO: Número de valores (' + rowData.length + ') não coincide com número de colunas (' + COLUMNS.length + ')');
+  }
 
-  Logger.log('Dados salvos com sucesso na linha ' + sheet.getLastRow());
+  // Adicionar linha com os dados usando setValues (mais confiável que appendRow)
+  const nextRow = sheet.getLastRow() + 1;
+  sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
+
+  Logger.log('Dados salvos com sucesso na linha ' + nextRow + ' (' + rowData.length + ' colunas)');
 }
 
 /**
@@ -249,26 +260,61 @@ function setupSheet() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
 
-  if (!sheet) {
-    sheet = spreadsheet.insertSheet(SHEET_NAME);
-    sheet.appendRow(COLUMNS);
-
-    // Formatar cabeçalho
-    const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
-    headerRange.setFontWeight('bold');
-    headerRange.setBackground('#4CAF50');
-    headerRange.setFontColor('#FFFFFF');
-    headerRange.setWrap(true);
-
-    // Congelar primeira linha
-    sheet.setFrozenRows(1);
-
-    // Ajustar largura das colunas
-    sheet.autoResizeColumns(1, COLUMNS.length);
+  // Se a aba já existe, deletar para recriar do zero
+  if (sheet) {
+    Logger.log('Aba "' + SHEET_NAME + '" já existe. Deletando para recriar...');
+    spreadsheet.deleteSheet(sheet);
   }
 
-  Logger.log('Planilha configurada com sucesso');
-  Logger.log('Total de colunas: ' + COLUMNS.length);
+  // Criar nova aba
+  sheet = spreadsheet.insertSheet(SHEET_NAME);
+  Logger.log('Aba criada: ' + SHEET_NAME);
+  Logger.log('Total de colunas no array COLUMNS: ' + COLUMNS.length);
+
+  // Adicionar headers - linha por linha para garantir que todos sejam adicionados
+  Logger.log('Adicionando headers...');
+  sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
+
+  // Verificar quantas colunas foram adicionadas
+  const lastColumn = sheet.getLastColumn();
+  Logger.log('Colunas realmente adicionadas: ' + lastColumn);
+
+  // Formatar cabeçalho
+  const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#4CAF50');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setWrap(false);
+  headerRange.setVerticalAlignment('middle');
+
+  // Congelar primeira linha
+  sheet.setFrozenRows(1);
+
+  // Ajustar largura das colunas (primeiras 20 colunas para não demorar muito)
+  if (COLUMNS.length <= 20) {
+    sheet.autoResizeColumns(1, COLUMNS.length);
+  } else {
+    sheet.autoResizeColumns(1, 20);
+    // Definir largura padrão para o resto
+    for (let i = 21; i <= COLUMNS.length; i++) {
+      sheet.setColumnWidth(i, 120);
+    }
+  }
+
+  Logger.log('=== Configuração concluída ===');
+  Logger.log('Planilha: ' + SHEET_NAME);
+  Logger.log('Colunas esperadas: ' + COLUMNS.length);
+  Logger.log('Colunas criadas: ' + lastColumn);
+
+  if (lastColumn !== COLUMNS.length) {
+    Logger.log('ATENÇÃO: Número de colunas não coincide!');
+  } else {
+    Logger.log('✓ Todas as colunas foram criadas com sucesso!');
+  }
+
+  // Listar primeiras e últimas 5 colunas
+  Logger.log('Primeiras 5 colunas: ' + COLUMNS.slice(0, 5).join(', '));
+  Logger.log('Últimas 5 colunas: ' + COLUMNS.slice(-5).join(', '));
 }
 
 /**
@@ -345,33 +391,66 @@ function createDashboardSheet() {
   dashboardSheet.getRange(row, 1).setValue('Desktop vs Mobile vs Tablet');
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Desktop');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AC:AC,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BS:BS,TRUE)`); // isDesktop coluna 71
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Mobile');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AA:AA,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BQ:BQ,TRUE)`); // isMobile coluna 69
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Tablet');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AB:AB,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BR:BR,TRUE)`); // isTablet coluna 70
   row += 2;
 
   dashboardSheet.getRange(row, 1).setValue('Preferência de Tema');
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Dark Mode');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!BT:BT,"dark")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!CD:CD,"dark")`); // prefersColorScheme coluna 82
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Light Mode');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!BT:BT,"light")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!CD:CD,"light")`);
   row += 2;
 
   dashboardSheet.getRange(row, 1).setValue('Tempo Médio de Carregamento (ms)');
-  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE(${dataSheet}!AW:AW)`);
+  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE('${dataSheet}'!AE:AE)`); // loadTime coluna 31
   row++;
 
   dashboardSheet.getRange(row, 1).setValue('Tempo Médio First Contentful Paint (ms)');
-  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE(${dataSheet}!BC:BC)`);
+  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE('${dataSheet}'!AN:AN)`); // firstContentfulPaint coluna 40
 
   // Formatar
   dashboardSheet.autoResizeColumns(1, 2);
 
   Logger.log('Dashboard criado com sucesso');
+}
+
+/**
+ * MAPA DE COLUNAS (para referência)
+ * Use este mapa para criar fórmulas no dashboard
+ */
+function getColumnMap() {
+  const map = {};
+  COLUMNS.forEach((col, index) => {
+    const columnLetter = getColumnLetter(index + 1);
+    map[col] = columnLetter;
+  });
+
+  Logger.log('=== MAPA DE COLUNAS ===');
+  for (const [key, value] of Object.entries(map)) {
+    Logger.log(`${key}: ${value}`);
+  }
+
+  return map;
+}
+
+/**
+ * Converte número de coluna para letra (1=A, 27=AA, etc)
+ */
+function getColumnLetter(columnNumber) {
+  let temp;
+  let letter = '';
+  while (columnNumber > 0) {
+    temp = (columnNumber - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    columnNumber = (columnNumber - temp - 1) / 26;
+  }
+  return letter;
 }
