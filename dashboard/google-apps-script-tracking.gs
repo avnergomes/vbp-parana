@@ -204,10 +204,13 @@ function saveToSheet(data) {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
 
-  // Se a planilha não existe, criar e adicionar cabeçalhos
+  // Se a planilha não existe, criar com setupSheet
   if (!sheet) {
+    Logger.log('Planilha não existe. Criando automaticamente...');
     sheet = spreadsheet.insertSheet(SHEET_NAME);
-    sheet.appendRow(COLUMNS);
+
+    // Adicionar headers
+    sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
 
     // Formatar cabeçalho
     const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
@@ -217,6 +220,8 @@ function saveToSheet(data) {
 
     // Congelar primeira linha
     sheet.setFrozenRows(1);
+
+    Logger.log('Planilha criada com ' + COLUMNS.length + ' colunas');
   }
 
   // Preparar array de valores na ordem das colunas
@@ -236,10 +241,16 @@ function saveToSheet(data) {
     return value;
   });
 
-  // Adicionar linha com os dados
-  sheet.appendRow(rowData);
+  // Verificar se o número de valores corresponde ao número de colunas
+  if (rowData.length !== COLUMNS.length) {
+    Logger.log('ERRO: Número de valores (' + rowData.length + ') não coincide com número de colunas (' + COLUMNS.length + ')');
+  }
 
-  Logger.log('Dados salvos com sucesso na linha ' + sheet.getLastRow());
+  // Adicionar linha com os dados usando setValues (mais confiável que appendRow)
+  const nextRow = sheet.getLastRow() + 1;
+  sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
+
+  Logger.log('Dados salvos com sucesso na linha ' + nextRow + ' (' + rowData.length + ' colunas)');
 }
 
 /**
@@ -249,26 +260,61 @@ function setupSheet() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
 
-  if (!sheet) {
-    sheet = spreadsheet.insertSheet(SHEET_NAME);
-    sheet.appendRow(COLUMNS);
-
-    // Formatar cabeçalho
-    const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
-    headerRange.setFontWeight('bold');
-    headerRange.setBackground('#4CAF50');
-    headerRange.setFontColor('#FFFFFF');
-    headerRange.setWrap(true);
-
-    // Congelar primeira linha
-    sheet.setFrozenRows(1);
-
-    // Ajustar largura das colunas
-    sheet.autoResizeColumns(1, COLUMNS.length);
+  // Se a aba já existe, deletar para recriar do zero
+  if (sheet) {
+    Logger.log('Aba "' + SHEET_NAME + '" já existe. Deletando para recriar...');
+    spreadsheet.deleteSheet(sheet);
   }
 
-  Logger.log('Planilha configurada com sucesso');
-  Logger.log('Total de colunas: ' + COLUMNS.length);
+  // Criar nova aba
+  sheet = spreadsheet.insertSheet(SHEET_NAME);
+  Logger.log('Aba criada: ' + SHEET_NAME);
+  Logger.log('Total de colunas no array COLUMNS: ' + COLUMNS.length);
+
+  // Adicionar headers - linha por linha para garantir que todos sejam adicionados
+  Logger.log('Adicionando headers...');
+  sheet.getRange(1, 1, 1, COLUMNS.length).setValues([COLUMNS]);
+
+  // Verificar quantas colunas foram adicionadas
+  const lastColumn = sheet.getLastColumn();
+  Logger.log('Colunas realmente adicionadas: ' + lastColumn);
+
+  // Formatar cabeçalho
+  const headerRange = sheet.getRange(1, 1, 1, COLUMNS.length);
+  headerRange.setFontWeight('bold');
+  headerRange.setBackground('#4CAF50');
+  headerRange.setFontColor('#FFFFFF');
+  headerRange.setWrap(false);
+  headerRange.setVerticalAlignment('middle');
+
+  // Congelar primeira linha
+  sheet.setFrozenRows(1);
+
+  // Ajustar largura das colunas (primeiras 20 colunas para não demorar muito)
+  if (COLUMNS.length <= 20) {
+    sheet.autoResizeColumns(1, COLUMNS.length);
+  } else {
+    sheet.autoResizeColumns(1, 20);
+    // Definir largura padrão para o resto
+    for (let i = 21; i <= COLUMNS.length; i++) {
+      sheet.setColumnWidth(i, 120);
+    }
+  }
+
+  Logger.log('=== Configuração concluída ===');
+  Logger.log('Planilha: ' + SHEET_NAME);
+  Logger.log('Colunas esperadas: ' + COLUMNS.length);
+  Logger.log('Colunas criadas: ' + lastColumn);
+
+  if (lastColumn !== COLUMNS.length) {
+    Logger.log('ATENÇÃO: Número de colunas não coincide!');
+  } else {
+    Logger.log('✓ Todas as colunas foram criadas com sucesso!');
+  }
+
+  // Listar primeiras e últimas 5 colunas
+  Logger.log('Primeiras 5 colunas: ' + COLUMNS.slice(0, 5).join(', '));
+  Logger.log('Últimas 5 colunas: ' + COLUMNS.slice(-5).join(', '));
 }
 
 /**
