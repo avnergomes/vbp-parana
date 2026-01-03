@@ -345,33 +345,66 @@ function createDashboardSheet() {
   dashboardSheet.getRange(row, 1).setValue('Desktop vs Mobile vs Tablet');
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Desktop');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AC:AC,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BS:BS,TRUE)`); // isDesktop coluna 71
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Mobile');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AA:AA,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BQ:BQ,TRUE)`); // isMobile coluna 69
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Tablet');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!AB:AB,"TRUE")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!BR:BR,TRUE)`); // isTablet coluna 70
   row += 2;
 
   dashboardSheet.getRange(row, 1).setValue('Preferência de Tema');
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Dark Mode');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!BT:BT,"dark")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!CD:CD,"dark")`); // prefersColorScheme coluna 82
   row++;
   dashboardSheet.getRange(row, 1).setValue('  - Light Mode');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!BT:BT,"light")`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF('${dataSheet}'!CD:CD,"light")`);
   row += 2;
 
   dashboardSheet.getRange(row, 1).setValue('Tempo Médio de Carregamento (ms)');
-  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE(${dataSheet}!AW:AW)`);
+  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE('${dataSheet}'!AE:AE)`); // loadTime coluna 31
   row++;
 
   dashboardSheet.getRange(row, 1).setValue('Tempo Médio First Contentful Paint (ms)');
-  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE(${dataSheet}!BC:BC)`);
+  dashboardSheet.getRange(row, 2).setFormula(`=AVERAGE('${dataSheet}'!AN:AN)`); // firstContentfulPaint coluna 40
 
   // Formatar
   dashboardSheet.autoResizeColumns(1, 2);
 
   Logger.log('Dashboard criado com sucesso');
+}
+
+/**
+ * MAPA DE COLUNAS (para referência)
+ * Use este mapa para criar fórmulas no dashboard
+ */
+function getColumnMap() {
+  const map = {};
+  COLUMNS.forEach((col, index) => {
+    const columnLetter = getColumnLetter(index + 1);
+    map[col] = columnLetter;
+  });
+
+  Logger.log('=== MAPA DE COLUNAS ===');
+  for (const [key, value] of Object.entries(map)) {
+    Logger.log(`${key}: ${value}`);
+  }
+
+  return map;
+}
+
+/**
+ * Converte número de coluna para letra (1=A, 27=AA, etc)
+ */
+function getColumnLetter(columnNumber) {
+  let temp;
+  let letter = '';
+  while (columnNumber > 0) {
+    temp = (columnNumber - 1) % 26;
+    letter = String.fromCharCode(temp + 65) + letter;
+    columnNumber = (columnNumber - temp - 1) / 26;
+  }
+  return letter;
 }
