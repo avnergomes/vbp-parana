@@ -236,20 +236,26 @@
     Promise.all(asyncPromises).finally(() => {
       log('Enviando dados:', visitData);
 
-      fetch(TRACKING_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(visitData)
-      })
-      .then(() => {
-        log('Requisição enviada com sucesso (no-cors - sem resposta)');
-      })
-      .catch(error => {
-        log('Erro ao enviar:', error);
-      });
+      // Enviar dados sem esperar resposta (fire and forget)
+      try {
+        fetch(TRACKING_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(visitData),
+          keepalive: true
+        }).then(() => {
+          log('Dados enviados');
+        }).catch(() => {
+          // Silenciar erros de tracking para não impactar a aplicação
+          log('Tracking enviado (erro ignorado)');
+        });
+      } catch (e) {
+        // Silenciar qualquer erro
+        log('Tracking error (ignorado):', e.message);
+      }
     });
   }
 
