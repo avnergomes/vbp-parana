@@ -21,125 +21,138 @@
 const SPREADSHEET_ID = 'SEU_SPREADSHEET_ID_AQUI';
 const SHEET_NAME = 'Tracking Data';
 
-// Definição de todas as colunas (na ordem correta)
+// Definição de todas as colunas (DEVE COINCIDIR COM visitData em index.html)
 const COLUMNS = [
-  // Dados básicos
-  'timestamp',
-  'sessionId',
+  // Linha 1: Dados básicos (ordem exata do visitData)
   'page',
-  'pageTitle',
   'referrer',
+  'userAgent',
+  'language',
+  'screenWidth',
+  'screenHeight',
+  'platform',
+  'timezone',
+  'sessionId',
+  'timestamp',
+  'returningVisitor',
+
+  // Dispositivo
+  'colorDepth',
+  'pixelRatio',
+  'viewportWidth',
+  'viewportHeight',
+  'touchSupport',
+  'cpuCores',
+  'deviceMemory',
+
+  // Navegador
+  'vendor',
+  'cookiesEnabled',
+  'doNotTrack',
+  'onlineStatus',
+
+  // Conexão
+  'connectionType',
+  'connectionSpeed',
+  'saveDataMode',
 
   // URL/Página
   'protocol',
   'hostname',
   'pathname',
   'queryString',
+  'pageTitle',
 
-  // Navegador básico
-  'userAgent',
-  'language',
-  'languages',
-  'vendor',
-  'platform',
-  'cookiesEnabled',
-  'doNotTrack',
-  'onlineStatus',
-
-  // Dispositivo - Tela
-  'screenWidth',
-  'screenHeight',
-  'availScreenWidth',
-  'availScreenHeight',
-  'viewportWidth',
-  'viewportHeight',
-  'colorDepth',
-  'pixelRatio',
-  'screenOrientation',
-
-  // Dispositivo - Tipo
-  'isMobile',
-  'isTablet',
-  'isDesktop',
-  'touchSupport',
-  'maxTouchPoints',
-
-  // Dispositivo - Hardware
-  'cpuCores',
-  'deviceMemory',
-  'batteryLevel',
-  'batteryCharging',
-
-  // Conexão
-  'connectionType',
-  'connectionSpeed',
-  'connectionRTT',
-  'connectionDownlinkMax',
-  'saveDataMode',
-
-  // Performance - Básica
+  // Performance
   'loadTime',
 
-  // Performance - Detalhada
+  // Orientação
+  'screenOrientation',
+
+  // Timezone offset
+  'timezoneOffset',
+
+  // Performance detalhada
   'dnsLookupTime',
   'tcpConnectionTime',
   'serverResponseTime',
-  'domInteractiveTime',
   'domContentLoadedTime',
+  'domInteractiveTime',
   'firstPaint',
   'firstContentfulPaint',
-
-  // Performance - Tamanhos
   'transferSize',
   'encodedBodySize',
   'decodedBodySize',
 
+  // Conexão detalhada
+  'connectionRTT',
+  'connectionDownlinkMax',
+
   // Capacidades do navegador
+  'languages',
   'localStorageEnabled',
   'sessionStorageEnabled',
   'indexedDBEnabled',
   'serviceWorkerEnabled',
   'webGLSupported',
   'webRTCSupported',
-  'canvasSupported',
-  'svgSupported',
   'notificationPermission',
-  'pdfViewerEnabled',
+
+  // Plugins e MIME types
   'pluginsCount',
   'mimeTypesCount',
+  'pdfViewerEnabled',
 
-  // Armazenamento
-  'storageQuota',
-  'storageUsage',
-  'storageUsagePercent',
+  // Hardware adicional
+  'maxTouchPoints',
+  'batteryLevel',
+  'batteryCharging',
 
-  // Contexto
-  'secureContext',
-  'crossOriginIsolated',
+  // Contexto de navegação
   'historyLength',
   'isIframe',
-  'displayMode',
 
-  // Sessão
-  'sessionStartTime',
-  'pageViewsInSession',
-
-  // Marketing (UTM)
+  // Marketing e UTM
   'utmSource',
   'utmMedium',
   'utmCampaign',
   'utmTerm',
   'utmContent',
 
+  // Informações de sessão
+  'sessionStartTime',
+  'pageViewsInSession',
+
+  // Dispositivo móvel e tipo
+  'isMobile',
+  'isTablet',
+  'isDesktop',
+
+  // Aspectos de segurança e privacidade
+  'secureContext',
+  'crossOriginIsolated',
+
+  // Renderização
+  'canvasSupported',
+  'svgSupported',
+
+  // Armazenamento
+  'storageQuota',
+  'storageUsage',
+  'storageUsagePercent',
+
+  // Tamanho disponível da tela
+  'availScreenWidth',
+  'availScreenHeight',
+
+  // Modo de exibição
+  'displayMode',
+
   // Preferências do usuário
   'prefersColorScheme',
   'prefersReducedMotion',
   'prefersReducedTransparency',
-  'prefersContrast',
-
-  // Timezone
-  'timezone',
-  'timezoneOffset'
+  'prefersContrast'
 ];
 
 /**
@@ -310,12 +323,24 @@ function createDashboardSheet() {
   let row = 3;
 
   dashboardSheet.getRange(row, 1).setValue('Total de Visitantes Únicos (Sessões)');
-  dashboardSheet.getRange(row, 2).setFormula(`=COUNTA(UNIQUE(${dataSheet}!B:B))-1`);
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTA(UNIQUE(${dataSheet}!I:I))-1`);
   row++;
 
   dashboardSheet.getRange(row, 1).setValue('Total de Page Views');
   dashboardSheet.getRange(row, 2).setFormula(`=COUNTA(${dataSheet}!A:A)-1`);
   row++;
+
+  dashboardSheet.getRange(row, 1).setValue('Novos Visitantes vs Returning Visitors');
+  row++;
+  dashboardSheet.getRange(row, 1).setValue('  - Novos Visitantes');
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!K:K,FALSE)`);
+  row++;
+  dashboardSheet.getRange(row, 1).setValue('  - Returning Visitors');
+  dashboardSheet.getRange(row, 2).setFormula(`=COUNTIF(${dataSheet}!K:K,TRUE)`);
+  row++;
+  dashboardSheet.getRange(row, 1).setValue('  - Taxa de Retorno (%)');
+  dashboardSheet.getRange(row, 2).setFormula(`=IF(COUNTA(${dataSheet}!K:K)-1>0,COUNTIF(${dataSheet}!K:K,TRUE)/(COUNTA(${dataSheet}!K:K)-1)*100,0)`);
+  row += 2;
 
   dashboardSheet.getRange(row, 1).setValue('Desktop vs Mobile vs Tablet');
   row++;

@@ -4,12 +4,12 @@ Este guia explica como configurar o sistema de tracking completo para coletar da
 
 ## 📊 Dados Coletados
 
-O sistema coleta **89 campos diferentes** de dados, incluindo:
+O sistema coleta **90 campos diferentes** de dados, incluindo:
 
 ### Categorias de Dados
 
-1. **Dados Básicos** (9 campos)
-   - Página, título, referrer, timestamp, session ID, etc.
+1. **Dados Básicos** (11 campos)
+   - Página, título, referrer, timestamp, session ID, returning visitor, etc.
 
 2. **Informações do Navegador** (8 campos)
    - User agent, idioma(s), vendor, plataforma, cookies, Do Not Track, etc.
@@ -249,6 +249,6 @@ Para mais informações sobre o sistema de tracking:
 ## 🔄 Atualizações
 
 **Última atualização**: 2026-01-03
-**Versão**: 2.0 (Sistema expandido com 89 campos)
-**Campos totais**: 89 (anteriormente 30)
-**Novas categorias**: Performance detalhada, preferências do usuário, marketing (UTM), hardware adicional
+**Versão**: 2.1 (Sistema expandido com 90 campos)
+**Campos totais**: 90 (anteriormente 30)
+**Novas categorias**: Performance detalhada, preferências do usuário, marketing (UTM), hardware adicional, returning visitors

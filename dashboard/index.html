@@ -51,6 +51,23 @@
     const utmTerm = urlParams.get('utm_term') || '';
     const utmContent = urlParams.get('utm_content') || '';
 
+    // Detect returning visitor
+    const returningVisitor = (function() {
+      try {
+        const hasVisitedBefore = localStorage.getItem('vbp_has_visited');
+        if (!hasVisitedBefore) {
+          // Primeira visita - marcar para futuras visitas
+          localStorage.setItem('vbp_has_visited', 'true');
+          localStorage.setItem('vbp_first_visit', new Date().toISOString());
+          return false;
+        }
+        return true;
+      } catch(e) {
+        // Se localStorage não estiver disponível, assumir que não é returning visitor
+        return false;
+      }
+    })();
+
     const visitData = {
       // Dados básicos
       page: page || window.location.pathname + window.location.hash,
@@ -63,6 +80,7 @@
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       sessionId: getSessionId(),
       timestamp: new Date().toISOString(),
+      returningVisitor: returningVisitor,
 
       // Dispositivo
       colorDepth: screen.colorDepth || null,
