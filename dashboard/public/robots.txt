@@ -1,0 +1,3 @@
+﻿User-agent: *
+Allow: /
+Sitemap: https://avnergomes.github.io/vbp-parana/sitemap.xml
