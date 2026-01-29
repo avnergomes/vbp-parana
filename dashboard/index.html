@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vbp-parana/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Dashboard do Valor Bruto da Producao Agropecuaria do Parana para analise territorial." />
+    <meta name="description" content="Dashboard do Valor Bruto da Produção Agropecuária do Paraná para análise territorial." />
     <meta name="robots" content="index,follow" />
     <link rel="canonical" href="https://avnergomes.github.io/vbp-parana/" />
-    <title>VBP Parana | Avner Gomes</title>
+    <title>VBP Paraná | Avner Gomes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
     <script>
 (function() {
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbzT3O9M4tN-eYXLXoxAH9v2zdjfqFm0URPQrEPvnl1ZsVqXaJyb7QHDHnYDSJSRoacnYA/exec';
-  const DEBUG = true; // Mude para false em produÃ§Ã£o
+  const DEBUG = true; // Mude para false em produção
 
   function log(message, data) {
     if (DEBUG) {
@@ -65,13 +65,13 @@
         }
         return true;
       } catch(e) {
-        // Se localStorage nÃ£o estiver disponÃ­vel, assumir que nÃ£o Ã© returning visitor
+        // Se localStorage não estiver disponível, assumir que não é returning visitor
         return false;
       }
     })();
 
     const visitData = {
-      // Dados bÃ¡sicos
+      // Dados básicos
       page: page || window.location.pathname + window.location.hash,
       referrer: document.referrer || 'direto',
       userAgent: navigator.userAgent,
@@ -99,12 +99,12 @@
       doNotTrack: navigator.doNotTrack === "1",
       onlineStatus: navigator.onLine,
 
-      // ConexÃ£o (se disponÃ­vel)
+      // Conexão (se disponível)
       connectionType: navigator.connection?.effectiveType || 'unknown',
       connectionSpeed: navigator.connection?.downlink || null,
       saveDataMode: navigator.connection?.saveData || false,
 
-      // URL/PÃ¡gina
+      // URL/Página
       protocol: window.location.protocol,
       hostname: window.location.hostname,
       pathname: window.location.pathname,
@@ -115,13 +115,13 @@
       loadTime: performance.timing.loadEventEnd > 0 ?
         performance.timing.loadEventEnd - performance.timing.navigationStart : null,
 
-      // OrientaÃ§Ã£o
+      // Orientação
       screenOrientation: screen.orientation?.type || 'unknown',
 
       // Timezone offset
       timezoneOffset: new Date().getTimezoneOffset(),
 
-      // === NOVOS DADOS COLETADOS (adicionados Ã  direita) ===
+      // === NOVOS DADOS COLETADOS (adicionados à direita) ===
 
       // Performance detalhada
       dnsLookupTime: perfTiming.domainLookupEnd > 0 ? perfTiming.domainLookupEnd - perfTiming.domainLookupStart : null,
@@ -135,7 +135,7 @@
       encodedBodySize: perfEntries?.encodedBodySize || null,
       decodedBodySize: perfEntries?.decodedBodySize || null,
 
-      // ConexÃ£o detalhada
+      // Conexão detalhada
       connectionRTT: navigator.connection?.rtt || null,
       connectionDownlinkMax: navigator.connection?.downlinkMax || null,
 
@@ -165,10 +165,10 @@
 
       // Hardware adicional
       maxTouchPoints: navigator.maxTouchPoints || 0,
-      batteryLevel: null, // SerÃ¡ preenchido assincronamente se disponÃ­vel
-      batteryCharging: null, // SerÃ¡ preenchido assincronamente se disponÃ­vel
+      batteryLevel: null, // Será preenchido assincronamente se disponível
+      batteryCharging: null, // Será preenchido assincronamente se disponível
 
-      // Contexto de navegaÃ§Ã£o
+      // Contexto de navegação
       historyLength: window.history.length,
       isIframe: window.self !== window.top,
 
@@ -179,7 +179,7 @@
       utmTerm: utmTerm,
       utmContent: utmContent,
 
-      // InformaÃ§Ãµes de sessÃ£o
+      // Informações de sessão
       sessionStartTime: sessionStorage.getItem('vbp_session_start') || (function() {
         const start = new Date().toISOString();
         sessionStorage.setItem('vbp_session_start', start);
@@ -187,32 +187,32 @@
       })(),
       pageViewsInSession: parseInt(sessionStorage.getItem('vbp_page_views') || '0') + 1,
 
-      // Dispositivo mÃ³vel e tipo
+      // Dispositivo móvel e tipo
       isMobile: /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
       isTablet: /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent),
       isDesktop: !/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
 
-      // Aspectos de seguranÃ§a e privacidade
+      // Aspectos de segurança e privacidade
       secureContext: window.isSecureContext || false,
       crossOriginIsolated: window.crossOriginIsolated || false,
 
-      // RenderizaÃ§Ã£o
+      // Renderização
       canvasSupported: !!document.createElement('canvas').getContext,
       svgSupported: !!document.createElementNS && !!document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect,
 
       // Armazenamento
-      storageQuota: null, // SerÃ¡ preenchido assincronamente se disponÃ­vel
+      storageQuota: null, // Será preenchido assincronamente se disponível
 
-      // Tamanho disponÃ­vel da tela (descontando barras do sistema)
+      // Tamanho disponível da tela (descontando barras do sistema)
       availScreenWidth: screen.availWidth || null,
       availScreenHeight: screen.availHeight || null,
 
-      // Modo de exibiÃ§Ã£o
+      // Modo de exibição
       displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' :
                    window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' :
                    window.matchMedia('(display-mode: minimal-ui)').matches ? 'minimal-ui' : 'browser',
 
-      // PreferÃªncias do usuÃ¡rio
+      // Preferências do usuário
       prefersColorScheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' :
                          window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'no-preference',
       prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -221,10 +221,10 @@
                       window.matchMedia('(prefers-contrast: low)').matches ? 'low' : 'no-preference'
     };
 
-    // Atualizar contador de page views da sessÃ£o
+    // Atualizar contador de page views da sessão
     sessionStorage.setItem('vbp_page_views', visitData.pageViewsInSession.toString());
 
-    // Coletar dados assÃ­ncronos (battery e storage)
+    // Coletar dados assíncronos (battery e storage)
     const asyncPromises = [];
 
     // Battery API
@@ -252,7 +252,7 @@
       );
     }
 
-    // Aguardar coleta assÃ­ncrona antes de enviar
+    // Aguardar coleta assíncrona antes de enviar
     Promise.all(asyncPromises).finally(() => {
       log('Enviando dados:', visitData);
 
@@ -269,7 +269,7 @@
         }).then(() => {
           log('Dados enviados');
         }).catch(() => {
-          // Silenciar erros de tracking para nÃ£o impactar a aplicaÃ§Ã£o
+          // Silenciar erros de tracking para não impactar a aplicação
           log('Tracking enviado (erro ignorado)');
         });
       } catch (e) {
@@ -283,13 +283,13 @@
   log('Inicializando rastreamento');
   trackVisit();
 
-  // Rastrear mudanÃ§as de hash (para rotas #hash)
+  // Rastrear mudanças de hash (para rotas #hash)
   window.addEventListener('hashchange', function() {
     log('Hash mudou');
     trackVisit();
   });
 
-  // Rastrear mudanÃ§as de rota no React Router (popstate)
+  // Rastrear mudanças de rota no React Router (popstate)
   window.addEventListener('popstate', function() {
     log('Popstate disparado');
     setTimeout(() => trackVisit(), 100);
@@ -314,6 +314,5 @@
 </script>
   </body>
 </html>
-
 
 

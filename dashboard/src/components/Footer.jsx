@@ -14,13 +14,13 @@ export default function Footer() {
                 <Leaf className="w-5 h-5 md:w-6 md:h-6 text-primary-600" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-dark-900 text-sm md:text-base">VBP ParanÃ¡</h3>
-                <p className="text-[10px] md:text-xs text-dark-600">InteligÃªncia Territorial</p>
+                <h3 className="font-display font-bold text-dark-900 text-sm md:text-base">VBP Paraná</h3>
+                <p className="text-[10px] md:text-xs text-dark-600">Inteligência Territorial</p>
               </div>
             </div>
             <p className="text-xs md:text-sm text-dark-700 leading-relaxed">
-              Dashboard interativo para anÃ¡lise do Valor Bruto da ProduÃ§Ã£o
-              AgropecuÃ¡ria do estado do ParanÃ¡ (2012-2024).
+              Dashboard interativo para análise do Valor Bruto da Produção
+              Agropecuária do estado do Paraná (2012-2024).
             </p>
           </div>
 
@@ -30,11 +30,11 @@ export default function Footer() {
             <ul className="space-y-2 text-xs md:text-sm text-dark-700">
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
-                <span>Secretaria da Agricultura do ParanÃ¡ (SEAB)</span>
+                <span>Secretaria da Agricultura do Paraná (SEAB)</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
-                <span>Instituto de Desenvolvimento Rural (IDR-ParanÃ¡)</span>
+                <span>Instituto de Desenvolvimento Rural (IDR-Paraná)</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
@@ -55,7 +55,7 @@ export default function Footer() {
                   className="flex items-center gap-2 text-dark-700 hover:text-primary-600 transition-colors group"
                 >
                   <Github className="w-4 h-4 flex-shrink-0" />
-                  <span>RepositÃ³rio no GitHub</span>
+                  <span>Repositório no GitHub</span>
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </a>
               </li>
@@ -66,7 +66,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-dark-700 hover:text-primary-600 transition-colors group"
                 >
-                  <span>IDR-ParanÃ¡</span>
+                  <span>IDR-Paraná</span>
                   <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </a>
               </li>
@@ -78,9 +78,9 @@ export default function Footer() {
         <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-accent-200 flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-dark-600">
             <p>
-              {currentYear} VBP ParanÃ¡. Dados pÃºblicos processados para fins analÃ­ticos.
+              {currentYear} VBP Paraná. Dados públicos processados para fins analíticos.
             </p>
-            <span className="hidden sm:inline text-accent-400">â€¢</span>
+            <span className="hidden sm:inline text-accent-400">•</span>
             <div className="flex flex-col items-start gap-2">
               <h4 className="text-[10px] md:text-xs font-semibold text-dark-900">Outros projetos</h4>
               <div className="flex flex-wrap gap-2">
@@ -98,7 +98,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
                 >
-                  Precos de Terras
+                  Preços de Terras
                 </a>
                 <a
                   href="https://avnergomes.github.io/precos-diarios/"
@@ -106,7 +106,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
                 >
-                  Precos Diarios
+                  Preços Diários
                 </a>
                 <a
                   href="https://avnergomes.github.io/precos-florestais/"
@@ -114,7 +114,7 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
                 >
-                  Precos Florestais
+                  Preços Florestais
                 </a>
               </div>
             </div>
@@ -131,7 +131,7 @@ export default function Footer() {
           </div>
           <div className="flex items-center flex-wrap justify-center gap-2">
             <span className="badge badge-green text-[10px] md:text-xs">13 anos de dados</span>
-            <span className="badge badge-blue text-[10px] md:text-xs">399 municÃ­pios</span>
+            <span className="badge badge-blue text-[10px] md:text-xs">399 municípios</span>
             <span className="badge badge-yellow text-[10px] md:text-xs">200+ produtos</span>
           </div>
         </div>
