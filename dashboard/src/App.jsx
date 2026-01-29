@@ -45,6 +45,17 @@ export default function App() {
   // Filter data
   const filteredData = useFilteredData(aggregated, detailed, geoMap, filters);
 
+  const filterSummary = useMemo(() => {
+    const [anoMin, anoMax] = filters.anos || [];
+    const periodLabel = anoMin && anoMax ? `${anoMin} - ${anoMax}` : 'Todos os anos';
+    const cadeiaLabel = filters.cadeias?.length ? filters.cadeias.join(', ') : 'Todas as cadeias';
+    const produtoLabel = filters.produtos?.length ? filters.produtos.join(', ') : 'Todos os produtos';
+    const regionalLabel = filters.regionais?.length ? filters.regionais.join(', ') : 'Todas as regionais';
+    const municipioLabel = filters.municipios?.length ? filters.municipios.join(', ') : 'Todos os municipios';
+
+    return `Per\u00edodo: ${periodLabel} \u2022 Cadeias: ${cadeiaLabel} \u2022 Produtos: ${produtoLabel} \u2022 Regionais: ${regionalLabel} \u2022 Municipios: ${municipioLabel}`;
+  }, [filters]);
+
   if (loading) {
     return <Loading />;
   }
@@ -81,6 +92,8 @@ export default function App() {
           onFiltersChange={setFilters}
           filteredData={filteredData}
         />
+
+        <div className="text-sm text-neutral-500">{filterSummary}</div>
 
         {/* KPIs */}
         <KpiCards data={filteredData} />
