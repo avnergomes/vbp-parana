@@ -40,6 +40,11 @@ Thumbs.db
 # Streamlit
 .streamlit/
 
+# Environment
+.env
+.env.*
+!.env.example
+
 # Node
 node_modules/
 
