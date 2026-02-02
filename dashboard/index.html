@@ -19,7 +19,7 @@
     <script>
 (function() {
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbzT3O9M4tN-eYXLXoxAH9v2zdjfqFm0URPQrEPvnl1ZsVqXaJyb7QHDHnYDSJSRoacnYA/exec';
-  const DEBUG = true; // Mude para false em produção
+  const DEBUG = false;
 
   function log(message, data) {
     if (DEBUG) {
@@ -71,6 +71,7 @@
     })();
 
     const visitData = {
+      origin: window.location.origin,
       // Dados básicos
       page: page || window.location.pathname + window.location.hash,
       referrer: document.referrer || 'direto',
