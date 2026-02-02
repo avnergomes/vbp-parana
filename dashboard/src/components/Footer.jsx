@@ -85,14 +85,6 @@ export default function Footer() {
               <h4 className="text-[10px] md:text-xs font-semibold text-dark-900">Outros projetos</h4>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href="https://avnergomes.github.io/portfolio/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
-                >
-                  Portfolio
-                </a>
-                <a
                   href="https://avnergomes.github.io/precos-de-terras/"
                   target="_blank"
                   rel="noopener noreferrer"
