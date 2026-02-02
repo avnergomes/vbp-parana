@@ -1,0 +1,49 @@
+name: SEO Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check robots.txt exists
+        run: |
+          if [ -f "dashboard/public/robots.txt" ]; then
+            echo "robots.txt found"
+          else
+            echo "::error::robots.txt is missing!"
+            exit 1
+          fi
+
+      - name: Check sitemap.xml exists
+        run: |
+          if [ -f "dashboard/public/sitemap.xml" ]; then
+            echo "sitemap.xml found"
+          else
+            echo "::error::sitemap.xml is missing!"
+            exit 1
+          fi
+
+      - name: Check robots.txt references sitemap
+        run: |
+          if grep -qi "sitemap" "dashboard/public/robots.txt"; then
+            echo "robots.txt references sitemap"
+          else
+            echo "::error::robots.txt does not reference sitemap!"
+            exit 1
+          fi
+
+      - name: Check 404.html exists
+        run: |
+          if [ -f "dashboard/public/404.html" ]; then
+            echo "404.html found"
+          else
+            echo "::warning::404.html is missing"
+          fi
