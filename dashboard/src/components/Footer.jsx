@@ -1,4 +1,4 @@
-﻿import { Leaf, Github, ExternalLink, User } from 'lucide-react';
+import { Database, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -7,130 +7,96 @@ export default function Footer() {
     <footer className="mt-12 border-t border-accent-200 bg-gradient-to-b from-neutral-50 to-accent-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {/* Brand */}
-          <div className="space-y-3 md:space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary-100 rounded-xl">
-                <Leaf className="w-5 h-5 md:w-6 md:h-6 text-primary-600" />
-              </div>
-              <div>
-                <h3 className="font-display font-bold text-dark-900 text-sm md:text-base">VBP Paraná</h3>
-                <p className="text-[10px] md:text-xs text-dark-600">Inteligência Territorial</p>
-              </div>
-            </div>
-            <p className="text-xs md:text-sm text-dark-700 leading-relaxed">
-              Dashboard interativo para análise do Valor Bruto da Produção
-              Agropecuária do estado do Paraná (2012-2024).
-            </p>
-          </div>
-
-          {/* Data Sources */}
-          <div className="space-y-3 md:space-y-4">
-            <h4 className="font-semibold text-dark-900 text-sm md:text-base">Fontes de Dados</h4>
-            <ul className="space-y-2 text-xs md:text-sm text-dark-700">
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
-                <span>Secretaria da Agricultura do Paraná (SEAB)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
-                <span>Instituto de Desenvolvimento Rural (IDR-Paraná)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-primary-500 rounded-full flex-shrink-0" />
-                <span>IBGE - Malhas Municipais</span>
-              </li>
+          {/* Fonte de Dados */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-dark-900 text-sm flex items-center gap-2">
+              <Database className="w-4 h-4 text-primary-600" />
+              Fonte de Dados
+            </h4>
+            <ul className="space-y-1.5 text-xs text-dark-600">
+              <li>SEAB - Secretaria da Agricultura do Paraná</li>
+              <li>IDR-Paraná - Instituto de Desenvolvimento Rural</li>
+              <li>IBGE - Malhas Municipais</li>
             </ul>
           </div>
 
-          {/* Links */}
-          <div className="space-y-3 md:space-y-4">
-            <h4 className="font-semibold text-dark-900 text-sm md:text-base">Links</h4>
-            <ul className="space-y-2 text-xs md:text-sm">
-              <li>
-                <a
-                  href="https://github.com/avnergomes/vbp-parana"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-dark-700 hover:text-primary-600 transition-colors group"
-                >
-                  <Github className="w-4 h-4 flex-shrink-0" />
-                  <span>Repositório no GitHub</span>
-                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://www.idrparana.pr.gov.br/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-dark-700 hover:text-primary-600 transition-colors group"
-                >
-                  <span>IDR-Paraná</span>
-                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom */}
-        <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-accent-200 flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-dark-600">
-            <p>
-              {currentYear} VBP Paraná. Dados públicos processados para fins analíticos.
-            </p>
-            <span className="hidden sm:inline text-accent-400">•</span>
-            <div className="flex flex-col items-start gap-2">
-              <h4 className="text-[10px] md:text-xs font-semibold text-dark-900">Outros projetos</h4>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href="https://avnergomes.github.io/precos-de-terras/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
-                >
-                  Preços de Terras
-                </a>
-                <a
-                  href="https://avnergomes.github.io/precos-diarios/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
-                >
-                  Preços Diários
-                </a>
-                <a
-                  href="https://avnergomes.github.io/precos-florestais/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1.5 text-[10px] md:text-xs rounded-full border border-accent-200 bg-white/70 text-dark-700 hover:text-primary-600 hover:border-primary-300 transition-colors"
-                >
-                  Preços Florestais
-                </a>
-              </div>
+          {/* Datageo Paraná */}
+          <div className="space-y-3">
+            <h4 className="font-semibold text-dark-900 text-sm">
+              <a
+                href="https://datageoparana.github.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary-600 transition-colors inline-flex items-center gap-1"
+              >
+                Datageo Paraná
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              <a
+                href="https://avnergomes.github.io/precos-diarios/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-2.5 py-1 text-[10px] rounded-full border border-accent-200 bg-white/70 text-dark-600 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              >
+                Preços Diários
+              </a>
+              <a
+                href="https://avnergomes.github.io/precos-florestais/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-2.5 py-1 text-[10px] rounded-full border border-accent-200 bg-white/70 text-dark-600 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              >
+                Preços Florestais
+              </a>
+              <a
+                href="https://avnergomes.github.io/precos-de-terras/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-2.5 py-1 text-[10px] rounded-full border border-accent-200 bg-white/70 text-dark-600 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              >
+                Preços de Terras
+              </a>
+              <a
+                href="https://avnergomes.github.io/comexstat-parana/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-2.5 py-1 text-[10px] rounded-full border border-accent-200 bg-white/70 text-dark-600 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              >
+                ComexStat Paraná
+              </a>
             </div>
+          </div>
+
+          {/* Developer */}
+          <div className="space-y-3 flex flex-col items-start md:items-end">
             <a
               href="https://avnergomes.github.io/portfolio"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-dark-500 hover:text-primary-600 transition-colors group"
-              title="Desenvolvido por Avner Gomes"
+              className="flex items-center gap-2 text-dark-500 hover:text-primary-600 transition-colors group"
+              title="Portfolio"
             >
-              <img src="/vbp-parana/assets/logo.png" alt="Avner Gomes" className="w-5 h-5 md:w-6 md:h-6 rounded-full opacity-80 group-hover:opacity-100 transition-opacity" />
-              <span className="text-[10px] md:text-xs">Desenvolvido por Avner Gomes</span>
+              <img
+                src={`${import.meta.env.BASE_URL}assets/logo.png`}
+                alt="Avner Gomes"
+                className="w-8 h-8 rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
+              />
+              <span className="text-xs">Desenvolvido por Avner Gomes</span>
             </a>
           </div>
-          <div className="flex items-center flex-wrap justify-center gap-2">
-            <span className="badge badge-green text-[10px] md:text-xs">13 anos de dados</span>
-            <span className="badge badge-blue text-[10px] md:text-xs">399 municípios</span>
-            <span className="badge badge-yellow text-[10px] md:text-xs">200+ produtos</span>
+        </div>
+
+        {/* Bottom */}
+        <div className="mt-6 pt-4 border-t border-accent-200 flex items-center justify-between text-[10px] text-dark-400">
+          <p>&copy; {currentYear} VBP Paraná. Dados públicos.</p>
+          <div className="flex gap-2">
+            <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">13 anos</span>
+            <span className="px-2 py-0.5 bg-accent-100 text-accent-700 rounded-full">399 municípios</span>
           </div>
         </div>
       </div>
     </footer>
   );
 }
-
-
-
