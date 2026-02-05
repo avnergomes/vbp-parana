@@ -14,9 +14,8 @@ export default function Footer() {
               Fonte de Dados
             </h4>
             <ul className="space-y-1.5 text-xs text-dark-600">
+              <li>DERAL - Departamento de Economia Rural</li>
               <li>SEAB - Secretaria da Agricultura do Paraná</li>
-              <li>IDR-Paraná - Instituto de Desenvolvimento Rural</li>
-              <li>IBGE - Malhas Municipais</li>
             </ul>
           </div>
 
