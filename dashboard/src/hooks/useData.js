@@ -46,7 +46,6 @@ export function useData() {
         setGeoMap(geoMapData);
         setError(null);
       } catch (err) {
-        console.error('Erro ao carregar dados:', err);
         setError(err.message);
       } finally {
         setLoading(false);
