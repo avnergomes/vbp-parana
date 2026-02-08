@@ -50,3 +50,6 @@ node_modules/
 
 # Build output (generated, can be rebuilt)
 dashboard/dist/
+
+# Claude Code
+.claude/
