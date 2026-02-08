@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
-import { MapPin, Layers } from 'lucide-react';
-import { formatCurrency, formatNumber, MAP_GRADIENTS } from '../utils/format';
+import { MapPin } from 'lucide-react';
+import { formatCurrency, formatNumber } from '../utils/format';
 
 export default function MapChart({ data, geoData, metric = 'valor', onMunicipioClick, selectedMunicipio }) {
   const mapRef = useRef(null);
@@ -192,11 +192,12 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
     });
   }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients, selectedMunicipio, onMunicipioClick]);
 
-  const metricOptions = [
-    { value: 'valor', label: 'Valor (R$)' },
-    { value: 'producao', label: 'Produção' },
-    { value: 'area', label: 'Área (ha)' },
-  ];
+  // Configuração das métricas com cores
+  const metricConfig = {
+    valor: { label: 'Valor (R$)', activeClass: 'bg-forest-600 text-white' },
+    producao: { label: 'Produção', activeClass: 'bg-water-600 text-white' },
+    area: { label: 'Área (ha)', activeClass: 'bg-harvest-600 text-white' },
+  };
 
   return (
     <div className="chart-container">
@@ -208,17 +209,21 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
           <h3 className="section-title">Mapa Territorial</h3>
         </div>
 
+        {/* Botões de métrica (substituindo dropdown) */}
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-earth-400" />
-          <select
-            value={selectedMetric}
-            onChange={(e) => setSelectedMetric(e.target.value)}
-            className="filter-select w-auto"
-          >
-            {metricOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+          {Object.entries(metricConfig).map(([key, config]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedMetric(key)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                selectedMetric === key
+                  ? config.activeClass
+                  : 'bg-earth-100 text-earth-600 hover:bg-earth-200'
+              }`}
+            >
+              {config.label}
+            </button>
+          ))}
         </div>
       </div>
 
