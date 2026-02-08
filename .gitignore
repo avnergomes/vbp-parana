@@ -53,3 +53,6 @@ dashboard/dist/
 
 # Claude Code
 .claude/
+
+# Google Apps Script (secrets)
+*.gs
