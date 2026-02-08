@@ -59,303 +59,91 @@
   <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+<!-- Analytics Tracking Script - LGPD Compliant (19 campos anonimos) -->
     <script>
-(function() {
-  const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbyk8VzLygqFmid0cSB5Qge8yRKRV-hJNvWlCSZBPrOCnyJyTd21d-6mNRjyJ7NIr_-36Q/exec';
-  const DEBUG = false;
+    (function() {
+      var TRACKING_URL = 'https://script.google.com/macros/s/AKfycbyk8VzLygqFmid0cSB5Qge8yRKRV-hJNvWlCSZBPrOCnyJyTd21d-6mNRjyJ7NIr_-36Q/exec';
 
-  function log(message, data) {
-    if (DEBUG) {
-      console.log('[VBP Tracking]', message, data || '');
-    }
-  }
+      function getDeviceType() {
+        var ua = navigator.userAgent;
+        if (/tablet|ipad|playbook|silk/i.test(ua)) return 'Tablet';
+        if (/Mobile|Android|iPhone|iPod|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua)) return 'Mobile';
+        return 'Desktop';
+      }
 
-  function getSessionId() {
-    let sessionId = sessionStorage.getItem('vbp_session_id');
-    if (!sessionId) {
-      sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      sessionStorage.setItem('vbp_session_id', sessionId);
-      log('Novo sessionId criado:', sessionId);
-    } else {
-      log('SessionId existente:', sessionId);
-    }
-    return sessionId;
-  }
-
-  function trackVisit(page) {
-    // Get performance metrics
-    const perfTiming = performance.timing;
-    const perfEntries = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
-    const paintEntries = performance.getEntriesByType ? performance.getEntriesByType('paint') : [];
-
-    // Get UTM parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const utmSource = urlParams.get('utm_source') || '';
-    const utmMedium = urlParams.get('utm_medium') || '';
-    const utmCampaign = urlParams.get('utm_campaign') || '';
-    const utmTerm = urlParams.get('utm_term') || '';
-    const utmContent = urlParams.get('utm_content') || '';
-
-    // Detect returning visitor
-    const returningVisitor = (function() {
-      try {
-        const hasVisitedBefore = localStorage.getItem('vbp_has_visited');
-        if (!hasVisitedBefore) {
-          // Primeira visita - marcar para futuras visitas
-          localStorage.setItem('vbp_has_visited', 'true');
-          localStorage.setItem('vbp_first_visit', new Date().toISOString());
-          return false;
+      function getConnectionType() {
+        if (navigator.connection) {
+          return navigator.connection.effectiveType || 'unknown';
         }
-        return true;
-      } catch(e) {
-        // Se localStorage não estiver disponível, assumir que não é returning visitor
-        return false;
+        return 'unknown';
+      }
+
+      function getUTMParams() {
+        var params = new URLSearchParams(window.location.search);
+        return {
+          utmSource: params.get('utm_source') || '',
+          utmMedium: params.get('utm_medium') || '',
+          utmCampaign: params.get('utm_campaign') || '',
+          utmTerm: params.get('utm_term') || '',
+          utmContent: params.get('utm_content') || ''
+        };
+      }
+
+      function trackVisitor() {
+        try {
+          var loadTime = 0;
+          if (window.performance && window.performance.timing) {
+            loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+          }
+
+          var utmParams = getUTMParams();
+
+          // Campos LGPD-compliant (19 campos anonimos)
+          var data = {
+            origin: window.location.origin,
+            timestamp: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timezoneOffset: new Date().getTimezoneOffset(),
+            page: window.location.href,
+            pathname: window.location.pathname,
+            referrer: document.referrer || '',
+            pageTitle: document.title,
+            language: navigator.language,
+            deviceType: getDeviceType(),
+            screenOrientation: screen.orientation ? screen.orientation.type : 'unknown',
+            connectionType: getConnectionType(),
+            loadTime: loadTime > 0 ? loadTime : '',
+            utmSource: utmParams.utmSource,
+            utmMedium: utmParams.utmMedium,
+            utmCampaign: utmParams.utmCampaign,
+            utmTerm: utmParams.utmTerm,
+            utmContent: utmParams.utmContent,
+            prefersColorScheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          };
+
+          fetch(TRACKING_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          }).then(function() {
+            console.log('[Tracking] Data sent');
+          }).catch(function(err) {
+            console.warn('[Tracking] Error:', err);
+          });
+        } catch (e) {
+          console.warn('[Tracking] Exception:', e);
+        }
+      }
+
+      // Track on page load
+      if (document.readyState === 'complete') {
+        setTimeout(trackVisitor, 100);
+      } else {
+        window.addEventListener('load', function() { setTimeout(trackVisitor, 100); });
       }
     })();
-
-    const visitData = {
-      origin: window.location.origin,
-      // Dados básicos
-      page: page || window.location.pathname + window.location.hash,
-      referrer: document.referrer || 'direto',
-      userAgent: navigator.userAgent,
-      language: navigator.language,
-      screenWidth: screen.width,
-      screenHeight: screen.height,
-      platform: navigator.platform,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      sessionId: getSessionId(),
-      timestamp: new Date().toISOString(),
-      returningVisitor: returningVisitor,
-
-      // Dispositivo
-      colorDepth: screen.colorDepth || null,
-      pixelRatio: window.devicePixelRatio || 1,
-      viewportWidth: window.innerWidth || null,
-      viewportHeight: window.innerHeight || null,
-      touchSupport: navigator.maxTouchPoints > 0,
-      cpuCores: navigator.hardwareConcurrency || null,
-      deviceMemory: navigator.deviceMemory || null,
-
-      // Navegador
-      vendor: navigator.vendor || 'unknown',
-      cookiesEnabled: navigator.cookieEnabled,
-      doNotTrack: navigator.doNotTrack === "1",
-      onlineStatus: navigator.onLine,
-
-      // Conexão (se disponível)
-      connectionType: navigator.connection?.effectiveType || 'unknown',
-      connectionSpeed: navigator.connection?.downlink || null,
-      saveDataMode: navigator.connection?.saveData || false,
-
-      // URL/Página
-      protocol: window.location.protocol,
-      hostname: window.location.hostname,
-      pathname: window.location.pathname,
-      queryString: window.location.search || '',
-      pageTitle: document.title,
-
-      // Performance
-      loadTime: performance.timing.loadEventEnd > 0 ?
-        performance.timing.loadEventEnd - performance.timing.navigationStart : null,
-
-      // Orientação
-      screenOrientation: screen.orientation?.type || 'unknown',
-
-      // Timezone offset
-      timezoneOffset: new Date().getTimezoneOffset(),
-
-      // === NOVOS DADOS COLETADOS (adicionados à direita) ===
-
-      // Performance detalhada
-      dnsLookupTime: perfTiming.domainLookupEnd > 0 ? perfTiming.domainLookupEnd - perfTiming.domainLookupStart : null,
-      tcpConnectionTime: perfTiming.connectEnd > 0 ? perfTiming.connectEnd - perfTiming.connectStart : null,
-      serverResponseTime: perfTiming.responseEnd > 0 ? perfTiming.responseEnd - perfTiming.requestStart : null,
-      domContentLoadedTime: perfTiming.domContentLoadedEventEnd > 0 ? perfTiming.domContentLoadedEventEnd - perfTiming.navigationStart : null,
-      domInteractiveTime: perfTiming.domInteractive > 0 ? perfTiming.domInteractive - perfTiming.navigationStart : null,
-      firstPaint: paintEntries.find(e => e.name === 'first-paint')?.startTime || null,
-      firstContentfulPaint: paintEntries.find(e => e.name === 'first-contentful-paint')?.startTime || null,
-      transferSize: perfEntries?.transferSize || null,
-      encodedBodySize: perfEntries?.encodedBodySize || null,
-      decodedBodySize: perfEntries?.decodedBodySize || null,
-
-      // Conexão detalhada
-      connectionRTT: navigator.connection?.rtt || null,
-      connectionDownlinkMax: navigator.connection?.downlinkMax || null,
-
-      // Capacidades do navegador
-      languages: navigator.languages ? navigator.languages.join(',') : navigator.language,
-      localStorageEnabled: (function() {
-        try { return !!window.localStorage; } catch(e) { return false; }
-      })(),
-      sessionStorageEnabled: (function() {
-        try { return !!window.sessionStorage; } catch(e) { return false; }
-      })(),
-      indexedDBEnabled: !!window.indexedDB,
-      serviceWorkerEnabled: 'serviceWorker' in navigator,
-      webGLSupported: (function() {
-        try {
-          const canvas = document.createElement('canvas');
-          return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-        } catch(e) { return false; }
-      })(),
-      webRTCSupported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
-      notificationPermission: 'Notification' in window ? Notification.permission : 'not-supported',
-
-      // Plugins e MIME types
-      pluginsCount: navigator.plugins ? navigator.plugins.length : 0,
-      mimeTypesCount: navigator.mimeTypes ? navigator.mimeTypes.length : 0,
-      pdfViewerEnabled: navigator.pdfViewerEnabled || false,
-
-      // Hardware adicional
-      maxTouchPoints: navigator.maxTouchPoints || 0,
-      batteryLevel: null, // Será preenchido assincronamente se disponível
-      batteryCharging: null, // Será preenchido assincronamente se disponível
-
-      // Contexto de navegação
-      historyLength: window.history.length,
-      isIframe: window.self !== window.top,
-
-      // Marketing e UTM
-      utmSource: utmSource,
-      utmMedium: utmMedium,
-      utmCampaign: utmCampaign,
-      utmTerm: utmTerm,
-      utmContent: utmContent,
-
-      // Informações de sessão
-      sessionStartTime: sessionStorage.getItem('vbp_session_start') || (function() {
-        const start = new Date().toISOString();
-        sessionStorage.setItem('vbp_session_start', start);
-        return start;
-      })(),
-      pageViewsInSession: parseInt(sessionStorage.getItem('vbp_page_views') || '0') + 1,
-
-      // Dispositivo móvel e tipo
-      isMobile: /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-      isTablet: /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent),
-      isDesktop: !/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-
-      // Aspectos de segurança e privacidade
-      secureContext: window.isSecureContext || false,
-      crossOriginIsolated: window.crossOriginIsolated || false,
-
-      // Renderização
-      canvasSupported: !!document.createElement('canvas').getContext,
-      svgSupported: !!document.createElementNS && !!document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect,
-
-      // Armazenamento
-      storageQuota: null, // Será preenchido assincronamente se disponível
-
-      // Tamanho disponível da tela (descontando barras do sistema)
-      availScreenWidth: screen.availWidth || null,
-      availScreenHeight: screen.availHeight || null,
-
-      // Modo de exibição
-      displayMode: window.matchMedia('(display-mode: standalone)').matches ? 'standalone' :
-                   window.matchMedia('(display-mode: fullscreen)').matches ? 'fullscreen' :
-                   window.matchMedia('(display-mode: minimal-ui)').matches ? 'minimal-ui' : 'browser',
-
-      // Preferências do usuário
-      prefersColorScheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' :
-                         window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'no-preference',
-      prefersReducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-      prefersReducedTransparency: window.matchMedia('(prefers-reduced-transparency: reduce)').matches,
-      prefersContrast: window.matchMedia('(prefers-contrast: high)').matches ? 'high' :
-                      window.matchMedia('(prefers-contrast: low)').matches ? 'low' : 'no-preference'
-    };
-
-    // Atualizar contador de page views da sessão
-    sessionStorage.setItem('vbp_page_views', visitData.pageViewsInSession.toString());
-
-    // Coletar dados assíncronos (battery e storage)
-    const asyncPromises = [];
-
-    // Battery API
-    if ('getBattery' in navigator) {
-      asyncPromises.push(
-        navigator.getBattery().then(battery => {
-          visitData.batteryLevel = battery.level;
-          visitData.batteryCharging = battery.charging;
-        }).catch(() => {
-          // Ignorar erro silenciosamente
-        })
-      );
-    }
-
-    // Storage Quota API
-    if ('storage' in navigator && 'estimate' in navigator.storage) {
-      asyncPromises.push(
-        navigator.storage.estimate().then(estimate => {
-          visitData.storageQuota = estimate.quota || null;
-          visitData.storageUsage = estimate.usage || null;
-          visitData.storageUsagePercent = estimate.quota ? (estimate.usage / estimate.quota * 100).toFixed(2) : null;
-        }).catch(() => {
-          // Ignorar erro silenciosamente
-        })
-      );
-    }
-
-    // Aguardar coleta assíncrona antes de enviar
-    Promise.all(asyncPromises).finally(() => {
-      log('Enviando dados:', visitData);
-
-      // Enviar dados sem esperar resposta (fire and forget)
-      try {
-        fetch(TRACKING_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(visitData),
-          keepalive: true
-        }).then(() => {
-          log('Dados enviados');
-        }).catch(() => {
-          // Silenciar erros de tracking para não impactar a aplicação
-          log('Tracking enviado (erro ignorado)');
-        });
-      } catch (e) {
-        // Silenciar qualquer erro
-        log('Tracking error (ignorado):', e.message);
-      }
-    });
-  }
-
-  // Rastrear visita inicial
-  log('Inicializando rastreamento');
-  trackVisit();
-
-  // Rastrear mudanças de hash (para rotas #hash)
-  window.addEventListener('hashchange', function() {
-    log('Hash mudou');
-    trackVisit();
-  });
-
-  // Rastrear mudanças de rota no React Router (popstate)
-  window.addEventListener('popstate', function() {
-    log('Popstate disparado');
-    setTimeout(() => trackVisit(), 100);
-  });
-
-  // Interceptar pushState e replaceState para React Router
-  const originalPushState = history.pushState;
-  const originalReplaceState = history.replaceState;
-
-  history.pushState = function() {
-    originalPushState.apply(this, arguments);
-    log('PushState interceptado');
-    setTimeout(() => trackVisit(), 100);
-  };
-
-  history.replaceState = function() {
-    originalReplaceState.apply(this, arguments);
-    log('ReplaceState interceptado');
-    setTimeout(() => trackVisit(), 100);
-  };
-})();
-</script>
+    </script>
   </body>
 </html>
 

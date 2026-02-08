@@ -2,7 +2,16 @@ import { useState, useMemo } from 'react';
 import { Trophy, ChevronUp, ChevronDown, ArrowUpDown, Search } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../utils/format';
 
-export default function RankingTable({ data, type = 'produtos' }) {
+export default function RankingTable({
+  data,
+  type = 'produtos',
+  onProdutoClick,
+  onCadeiaClick,
+  onMunicipioClick,
+  selectedProduto,
+  selectedCadeia,
+  selectedMunicipio,
+}) {
   const [sortField, setSortField] = useState('valor');
   const [sortDir, setSortDir] = useState('desc');
   const [search, setSearch] = useState('');
@@ -152,38 +161,71 @@ export default function RankingTable({ data, type = 'produtos' }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-earth-100">
-            {items.map((item, index) => (
-              <tr
-                key={index}
-                className="hover:bg-forest-50/50 transition-colors"
-              >
-                <td className="px-4 py-3">
-                  <RankBadge rank={index + 1} />
-                </td>
-                <td className="px-4 py-3 font-medium text-earth-900">
-                  {getItemName(item)}
-                </td>
-                {type === 'produtos' && (
+            {items.map((item, index) => {
+              const itemName = getItemName(item);
+              const isSelected =
+                (type === 'produtos' && selectedProduto === itemName) ||
+                (type === 'municipios' && selectedMunicipio === itemName);
+
+              const handleRowClick = () => {
+                if (type === 'produtos' && onProdutoClick) {
+                  onProdutoClick(itemName);
+                } else if (type === 'municipios' && onMunicipioClick) {
+                  onMunicipioClick(itemName);
+                }
+              };
+
+              const handleCadeiaClick = (e) => {
+                e.stopPropagation();
+                if (onCadeiaClick && item.cadeia) {
+                  onCadeiaClick(item.cadeia);
+                }
+              };
+
+              return (
+                <tr
+                  key={index}
+                  onClick={handleRowClick}
+                  className={`transition-colors cursor-pointer
+                    ${isSelected ? 'bg-primary-100 hover:bg-primary-150' : 'hover:bg-forest-50/50'}
+                    ${isSelected ? 'ring-2 ring-inset ring-primary-400' : ''}`}
+                >
                   <td className="px-4 py-3">
-                    <span className="badge badge-green">{item.cadeia}</span>
+                    <RankBadge rank={index + 1} />
                   </td>
-                )}
-                {type === 'municipios' && (
-                  <td className="px-4 py-3 text-sm text-earth-600">
-                    {item.regional}
+                  <td className={`px-4 py-3 font-medium ${isSelected ? 'text-primary-900' : 'text-earth-900'}`}>
+                    {itemName}
                   </td>
-                )}
-                <td className="px-4 py-3 font-semibold text-forest-700">
-                  {formatCurrency(item.valor)}
-                </td>
-                <td className="px-4 py-3 text-earth-600">
-                  {formatNumber(item.producao)}
-                </td>
-                <td className="px-4 py-3 text-earth-600">
-                  {formatNumber(item.area)}
-                </td>
-              </tr>
-            ))}
+                  {type === 'produtos' && (
+                    <td className="px-4 py-3">
+                      <span
+                        onClick={handleCadeiaClick}
+                        className={`badge cursor-pointer transition-colors
+                          ${selectedCadeia === item.cadeia
+                            ? 'bg-primary-200 text-primary-800 ring-2 ring-primary-400'
+                            : 'badge-green hover:bg-forest-200'}`}
+                      >
+                        {item.cadeia}
+                      </span>
+                    </td>
+                  )}
+                  {type === 'municipios' && (
+                    <td className="px-4 py-3 text-sm text-earth-600">
+                      {item.regional}
+                    </td>
+                  )}
+                  <td className={`px-4 py-3 font-semibold ${isSelected ? 'text-primary-700' : 'text-forest-700'}`}>
+                    {formatCurrency(item.valor)}
+                  </td>
+                  <td className="px-4 py-3 text-earth-600">
+                    {formatNumber(item.producao)}
+                  </td>
+                  <td className="px-4 py-3 text-earth-600">
+                    {formatNumber(item.area)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -193,6 +235,11 @@ export default function RankingTable({ data, type = 'produtos' }) {
           Nenhum resultado encontrado
         </div>
       )}
+
+      <p className="text-xs text-center text-neutral-500 mt-3">
+        Clique em uma linha para filtrar por {type === 'produtos' ? 'produto' : 'municipio'}
+        {type === 'produtos' && ' ou clique na cadeia para filtrar por cadeia'}
+      </p>
     </div>
   );
 }

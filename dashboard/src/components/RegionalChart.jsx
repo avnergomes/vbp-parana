@@ -5,7 +5,7 @@ import {
 import { Globe } from 'lucide-react';
 import { formatCurrency, formatNumber, CHART_COLORS } from '../utils/format';
 
-export default function RegionalChart({ data }) {
+export default function RegionalChart({ data, onRegionalClick, selectedRegional }) {
   if (!data?.byRegional?.length) return null;
 
   const chartData = useMemo(() => {
@@ -17,6 +17,18 @@ export default function RegionalChart({ data }) {
       fill: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
     }));
   }, [data.byRegional]);
+
+  const handleBarClick = (entry) => {
+    if (onRegionalClick && entry?.name) {
+      onRegionalClick(entry.name);
+    }
+  };
+
+  const handleCardClick = (name) => {
+    if (onRegionalClick) {
+      onRegionalClick(name);
+    }
+  };
 
   const total = chartData.reduce((sum, item) => sum + item.valor, 0);
 
@@ -63,9 +75,15 @@ export default function RegionalChart({ data }) {
                 }}
                 formatter={(value) => [formatCurrency(value), 'Valor']}
               />
-              <Bar dataKey="valor" radius={[0, 6, 6, 0]}>
+              <Bar dataKey="valor" radius={[0, 6, 6, 0]} onClick={handleBarClick} cursor="pointer">
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.fill}
+                    opacity={selectedRegional && entry.name !== selectedRegional ? 0.4 : 1}
+                    stroke={entry.name === selectedRegional ? '#1f2937' : 'none'}
+                    strokeWidth={entry.name === selectedRegional ? 2 : 0}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -76,18 +94,25 @@ export default function RegionalChart({ data }) {
         <div className="space-y-3 overflow-y-auto max-h-96 scrollbar-thin pr-2">
           {chartData.map((item, idx) => {
             const percent = (item.valor / total * 100).toFixed(1);
+            const isSelected = selectedRegional === item.name;
             return (
               <div
                 key={item.name}
-                className="flex items-center gap-4 p-4 bg-gradient-to-r from-earth-50 to-white rounded-xl border border-earth-100 hover:border-forest-200 transition-colors"
+                onClick={() => handleCardClick(item.name)}
+                className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all
+                  ${isSelected
+                    ? 'bg-primary-100 border-primary-400 ring-2 ring-primary-300'
+                    : 'bg-gradient-to-r from-earth-50 to-white border-earth-100 hover:border-forest-200'}`}
               >
                 <div
                   className="w-2 h-12 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: item.fill }}
+                  style={{ backgroundColor: item.fill, opacity: selectedRegional && !isSelected ? 0.4 : 1 }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-earth-900 truncate">{item.name}</div>
-                  <div className="text-sm text-earth-500">
+                  <div className={`font-medium truncate ${isSelected ? 'text-primary-900' : 'text-earth-900'}`}>
+                    {item.name}
+                  </div>
+                  <div className={`text-sm ${isSelected ? 'text-primary-600' : 'text-earth-500'}`}>
                     {formatCurrency(item.valor)} ({percent}%)
                   </div>
                 </div>
@@ -102,6 +127,7 @@ export default function RegionalChart({ data }) {
           })}
         </div>
       </div>
+      <p className="text-xs text-center text-neutral-500 mt-3">Clique em uma barra ou card para filtrar por regional</p>
     </div>
   );
 }

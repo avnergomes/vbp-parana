@@ -4,7 +4,7 @@ import {
 import { TrendingUp } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../utils/format';
 
-export default function TimeSeriesChart({ data, metric = 'valor' }) {
+export default function TimeSeriesChart({ data, metric = 'valor', onAnoClick, selectedAno }) {
   if (!data?.timeSeries?.length) return null;
 
   const chartData = data.timeSeries.map(item => ({
@@ -12,7 +12,14 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
     valor: item.valor,
     producao: item.producao,
     area: item.area,
+    selected: selectedAno === item.ano,
   }));
+
+  const handleClick = (event) => {
+    if (onAnoClick && event?.activePayload?.[0]?.payload?.ano) {
+      onAnoClick(event.activePayload[0].payload.ano);
+    }
+  };
 
   const metricConfig = {
     valor: {
@@ -57,7 +64,7 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 120, left: 20, bottom: 10 }}>
+          <LineChart data={chartData} margin={{ top: 20, right: 120, left: 20, bottom: 10 }} onClick={handleClick} style={{ cursor: 'pointer' }}>
             <defs>
               <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -180,6 +187,12 @@ export default function TimeSeriesChart({ data, metric = 'valor' }) {
         <LegendItem color="#0ea5e9" label="Produção" axis="Eixo direito 1" />
         <LegendItem color="#f59e0b" label="Área (ha)" axis="Eixo direito 2" />
       </div>
+      {selectedAno && (
+        <p className="text-xs text-center text-primary-600 mt-2 font-medium">
+          Ano selecionado: {selectedAno}
+        </p>
+      )}
+      <p className="text-xs text-center text-neutral-500 mt-1">Clique em um ponto para filtrar por ano</p>
     </div>
   );
 }

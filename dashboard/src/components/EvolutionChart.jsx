@@ -6,7 +6,7 @@ import {
 import { Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatCurrency, formatNumber, CHART_COLORS, calculateVariation, formatVariation } from '../utils/format';
 
-export default function EvolutionChart({ data }) {
+export default function EvolutionChart({ data, onCadeiaClick, selectedCadeia }) {
   const [view, setView] = useState('stacked');
 
   if (!data?.evolutionCadeia?.length) return null;
@@ -76,7 +76,12 @@ export default function EvolutionChart({ data }) {
       </div>
 
       {view === 'stacked' && (
-        <StackedAreaView data={stackedData.data} cadeias={stackedData.cadeias} />
+        <StackedAreaView
+          data={stackedData.data}
+          cadeias={stackedData.cadeias}
+          onCadeiaClick={onCadeiaClick}
+          selectedCadeia={selectedCadeia}
+        />
       )}
 
       {view === 'variation' && variations && (
@@ -86,8 +91,14 @@ export default function EvolutionChart({ data }) {
   );
 }
 
-function StackedAreaView({ data, cadeias }) {
+function StackedAreaView({ data, cadeias, onCadeiaClick, selectedCadeia }) {
   const topCadeias = cadeias.slice(0, 8);
+
+  const handleLegendClick = (e) => {
+    if (onCadeiaClick && e?.value) {
+      onCadeiaClick(e.value);
+    }
+  };
 
   return (
     <div className="h-96">
@@ -128,7 +139,8 @@ function StackedAreaView({ data, cadeias }) {
           <Legend
             verticalAlign="bottom"
             height={36}
-            wrapperStyle={{ fontSize: '11px' }}
+            wrapperStyle={{ fontSize: '11px', cursor: 'pointer' }}
+            onClick={handleLegendClick}
           />
           {topCadeias.map((cadeia, idx) => (
             <Area
@@ -138,10 +150,19 @@ function StackedAreaView({ data, cadeias }) {
               stackId="1"
               stroke={CHART_COLORS.rainbow[idx]}
               fill={`url(#color${idx})`}
+              fillOpacity={selectedCadeia && selectedCadeia !== cadeia ? 0.3 : 1}
+              strokeOpacity={selectedCadeia && selectedCadeia !== cadeia ? 0.3 : 1}
+              strokeWidth={selectedCadeia === cadeia ? 3 : 1}
             />
           ))}
         </AreaChart>
       </ResponsiveContainer>
+      {selectedCadeia && (
+        <p className="text-xs text-center text-primary-600 mt-2 font-medium">
+          Cadeia selecionada: {selectedCadeia}
+        </p>
+      )}
+      <p className="text-xs text-center text-neutral-500 mt-1">Clique na legenda para filtrar por cadeia</p>
     </div>
   );
 }

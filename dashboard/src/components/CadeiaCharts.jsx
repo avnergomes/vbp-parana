@@ -6,7 +6,7 @@ import {
 import { Layers, GitBranch } from 'lucide-react';
 import { formatCurrency, formatNumber, CHART_COLORS } from '../utils/format';
 
-export default function CadeiaCharts({ data }) {
+export default function CadeiaCharts({ data, onCadeiaClick, selectedCadeia }) {
   const [view, setView] = useState('bar');
 
   if (!data?.byCadeia?.length) return null;
@@ -17,6 +17,7 @@ export default function CadeiaCharts({ data }) {
     producao: item.producao,
     area: item.area,
     fill: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
+    selected: selectedCadeia === item.cadeia,
   }));
 
   // Data for treemap
@@ -79,14 +80,20 @@ export default function CadeiaCharts({ data }) {
         </div>
       </div>
 
-      {view === 'bar' && <BarChartView data={chartData} />}
-      {view === 'treemap' && <TreemapView data={treemapData} />}
-      {view === 'pie' && <PieChartView data={chartData} />}
+      {view === 'bar' && <BarChartView data={chartData} onCadeiaClick={onCadeiaClick} selectedCadeia={selectedCadeia} />}
+      {view === 'treemap' && <TreemapView data={treemapData} onCadeiaClick={onCadeiaClick} selectedCadeia={selectedCadeia} />}
+      {view === 'pie' && <PieChartView data={chartData} onCadeiaClick={onCadeiaClick} selectedCadeia={selectedCadeia} />}
     </div>
   );
 }
 
-function BarChartView({ data }) {
+function BarChartView({ data, onCadeiaClick, selectedCadeia }) {
+  const handleClick = (entry) => {
+    if (onCadeiaClick && entry?.name) {
+      onCadeiaClick(entry.name);
+    }
+  };
+
   return (
     <div className="h-96">
       <ResponsiveContainer width="100%" height="100%">
@@ -123,25 +130,47 @@ function BarChartView({ data }) {
           <Bar
             dataKey="valor"
             radius={[0, 6, 6, 0]}
+            onClick={handleClick}
+            cursor="pointer"
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.fill}
+                opacity={selectedCadeia && entry.name !== selectedCadeia ? 0.4 : 1}
+                stroke={entry.name === selectedCadeia ? '#1f2937' : 'none'}
+                strokeWidth={entry.name === selectedCadeia ? 2 : 0}
+              />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      <p className="text-xs text-center text-neutral-500 mt-2">Clique em uma barra para filtrar por cadeia</p>
     </div>
   );
 }
 
-function TreemapView({ data }) {
+function TreemapView({ data, onCadeiaClick, selectedCadeia }) {
   const COLORS = CHART_COLORS.rainbow;
 
-  const CustomContent = ({ x, y, width, height, name, depth, color }) => {
+  const CustomContent = ({ x, y, width, height, name, depth, color, root }) => {
     if (width < 40 || height < 30) return null;
 
+    // Get the cadeia name for this cell
+    const cadeiaName = depth === 1 ? name : root?.name;
+    const isSelected = selectedCadeia === cadeiaName;
+    const hasSelection = !!selectedCadeia;
+    const opacity = hasSelection && !isSelected ? 0.4 : 1;
+
+    const handleClick = (e) => {
+      e.stopPropagation();
+      if (onCadeiaClick && cadeiaName) {
+        onCadeiaClick(cadeiaName);
+      }
+    };
+
     return (
-      <g>
+      <g onClick={handleClick} style={{ cursor: 'pointer' }}>
         <rect
           x={x}
           y={y}
@@ -149,8 +178,9 @@ function TreemapView({ data }) {
           height={height}
           rx={4}
           fill={depth === 1 ? color : `${color}99`}
-          stroke="white"
-          strokeWidth={2}
+          stroke={isSelected ? '#1f2937' : 'white'}
+          strokeWidth={isSelected ? 3 : 2}
+          opacity={opacity}
         />
         {width > 60 && height > 35 && (
           <text
@@ -161,6 +191,7 @@ function TreemapView({ data }) {
             fill="white"
             fontSize={depth === 1 ? 12 : 10}
             fontWeight={depth === 1 ? 600 : 400}
+            opacity={opacity}
           >
             {name?.length > 15 ? `${name.slice(0, 15)}...` : name}
           </text>
@@ -193,15 +224,22 @@ function TreemapView({ data }) {
           />
         </Treemap>
       </ResponsiveContainer>
+      <p className="text-xs text-center text-neutral-500 mt-2">Clique em uma area para filtrar por cadeia</p>
     </div>
   );
 }
 
-function PieChartView({ data }) {
+function PieChartView({ data, onCadeiaClick, selectedCadeia }) {
   const total = data.reduce((sum, item) => sum + item.valor, 0);
 
+  const handleClick = (entry) => {
+    if (onCadeiaClick && entry?.name) {
+      onCadeiaClick(entry.name);
+    }
+  };
+
   return (
-    <div className="h-96 flex items-center">
+    <div className="h-96 flex flex-col items-center">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -213,13 +251,21 @@ function PieChartView({ data }) {
             outerRadius={120}
             innerRadius={60}
             paddingAngle={2}
+            onClick={handleClick}
+            cursor="pointer"
             label={({ name, percent }) =>
               percent > 0.05 ? `${name.slice(0, 12)}${name.length > 12 ? '...' : ''} (${(percent * 100).toFixed(0)}%)` : ''
             }
             labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.fill}
+                opacity={selectedCadeia && entry.name !== selectedCadeia ? 0.4 : 1}
+                stroke={entry.name === selectedCadeia ? '#1f2937' : 'none'}
+                strokeWidth={entry.name === selectedCadeia ? 3 : 0}
+              />
             ))}
           </Pie>
           <Tooltip
@@ -237,6 +283,7 @@ function PieChartView({ data }) {
           />
         </PieChart>
       </ResponsiveContainer>
+      <p className="text-xs text-center text-neutral-500 mt-2">Clique em uma fatia para filtrar por cadeia</p>
     </div>
   );
 }

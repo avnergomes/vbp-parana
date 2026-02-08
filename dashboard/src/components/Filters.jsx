@@ -7,7 +7,8 @@ export default function Filters({
   geoMap,
   filters,
   onFiltersChange,
-  filteredData
+  filteredData,
+  simplified = false
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -16,8 +17,9 @@ export default function Filters({
   const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
   const [anoMin, anoMax] = anos;
 
-  // Derived filter options based on selections
+  // Derived filter options based on selections (only needed for non-simplified mode)
   const availableSubcadeias = useMemo(() => {
+    if (simplified) return [];
     if (!produtoMap || cadeias.length === 0) return metadata.filters?.subcadeias || [];
     const subs = new Set();
     cadeias.forEach(cadeia => {
@@ -26,9 +28,10 @@ export default function Filters({
       }
     });
     return Array.from(subs).sort();
-  }, [produtoMap, cadeias, metadata]);
+  }, [produtoMap, cadeias, metadata, simplified]);
 
   const availableProdutos = useMemo(() => {
+    if (simplified) return [];
     if (!produtoMap) return metadata.filters?.produtos || [];
     if (cadeias.length === 0 && subcadeias.length === 0) {
       return metadata.filters?.produtos || [];
@@ -48,7 +51,7 @@ export default function Filters({
       }
     });
     return Array.from(prods).sort();
-  }, [produtoMap, cadeias, subcadeias, metadata]);
+  }, [produtoMap, cadeias, subcadeias, metadata, simplified]);
 
   const availableRegionais = useMemo(() => {
     if (!geoMap || mesos.length === 0) return metadata.filters?.regionais || [];
@@ -171,15 +174,20 @@ export default function Filters({
     document.body.removeChild(link);
   };
 
-  const hasActiveFilters =
-    mesos.length > 0 ||
-    regionais.length > 0 ||
-    municipios.length > 0 ||
-    cadeias.length > 0 ||
-    subcadeias.length > 0 ||
-    produtos.length > 0 ||
-    anoMin !== metadata.anoMin ||
-    anoMax !== metadata.anoMax;
+  const hasActiveFilters = simplified
+    ? (mesos.length > 0 ||
+       regionais.length > 0 ||
+       municipios.length > 0 ||
+       anoMin !== metadata.anoMin ||
+       anoMax !== metadata.anoMax)
+    : (mesos.length > 0 ||
+       regionais.length > 0 ||
+       municipios.length > 0 ||
+       cadeias.length > 0 ||
+       subcadeias.length > 0 ||
+       produtos.length > 0 ||
+       anoMin !== metadata.anoMin ||
+       anoMax !== metadata.anoMax);
 
   return (
     <div className="card p-4 md:p-6 relative z-20">
@@ -228,9 +236,9 @@ export default function Filters({
       </div>
 
       {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${simplified ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-4`}>
           {/* Year Range */}
-          <div className="lg:col-span-2">
+          <div className={simplified ? '' : 'lg:col-span-2'}>
             <label className="filter-label">Período</label>
             <div className="flex items-center gap-3">
               <select
@@ -288,39 +296,50 @@ export default function Filters({
             />
           </div>
 
-          {/* Cadeia */}
-          <div>
-            <label className="filter-label">Cadeia Produtiva</label>
-            <MultiSelect
-              options={metadata.filters?.cadeias || []}
-              selected={cadeias}
-              onChange={(val) => onFiltersChange({ ...filters, cadeias: val, subcadeias: [], produtos: [] })}
-              placeholder="Todas"
-            />
-          </div>
+          {/* Product filters - only show when not simplified */}
+          {!simplified && (
+            <>
+              {/* Cadeia */}
+              <div>
+                <label className="filter-label">Cadeia Produtiva</label>
+                <MultiSelect
+                  options={metadata.filters?.cadeias || []}
+                  selected={cadeias}
+                  onChange={(val) => onFiltersChange({ ...filters, cadeias: val, subcadeias: [], produtos: [] })}
+                  placeholder="Todas"
+                />
+              </div>
 
-          {/* Subcadeia */}
-          <div>
-            <label className="filter-label">Subcadeia</label>
-            <MultiSelect
-              options={availableSubcadeias}
-              selected={subcadeias}
-              onChange={(val) => onFiltersChange({ ...filters, subcadeias: val, produtos: [] })}
-              placeholder="Todas"
-            />
-          </div>
+              {/* Subcadeia */}
+              <div>
+                <label className="filter-label">Subcadeia</label>
+                <MultiSelect
+                  options={availableSubcadeias}
+                  selected={subcadeias}
+                  onChange={(val) => onFiltersChange({ ...filters, subcadeias: val, produtos: [] })}
+                  placeholder="Todas"
+                />
+              </div>
 
-          {/* Produto */}
-          <div className="lg:col-span-2">
-            <label className="filter-label">Produto</label>
-            <MultiSelect
-              options={availableProdutos}
-              selected={produtos}
-              onChange={(val) => onFiltersChange({ ...filters, produtos: val })}
-              placeholder="Todos"
-            />
-          </div>
+              {/* Produto */}
+              <div className="lg:col-span-2">
+                <label className="filter-label">Produto</label>
+                <MultiSelect
+                  options={availableProdutos}
+                  selected={produtos}
+                  onChange={(val) => onFiltersChange({ ...filters, produtos: val })}
+                  placeholder="Todos"
+                />
+              </div>
+            </>
+          )}
         </div>
+      )}
+
+      {simplified && isExpanded && (
+        <p className="text-xs text-neutral-500 mt-3 text-center">
+          Clique nos graficos para filtrar por cadeia, produto ou municipio
+        </p>
       )}
     </div>
   );

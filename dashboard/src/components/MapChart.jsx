@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { MapPin, Layers } from 'lucide-react';
 import { formatCurrency, formatNumber, MAP_GRADIENTS } from '../utils/format';
 
-export default function MapChart({ data, geoData, metric = 'valor' }) {
+export default function MapChart({ data, geoData, metric = 'valor', onMunicipioClick, selectedMunicipio }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerRef = useRef(null);
@@ -111,15 +111,17 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
 
       const style = (feature) => {
         const codIbge = feature.properties?.CodIbge;
+        const nome = feature.properties?.Municipio;
         const mData = municipioData[codIbge];
         const value = mData ? mData[selectedMetric] : 0;
+        const isSelected = selectedMunicipio === nome;
 
         return {
           fillColor: getColor(value),
-          weight: 1,
+          weight: isSelected ? 4 : 1,
           opacity: 1,
-          color: '#ffffff',
-          fillOpacity: 0.8,
+          color: isSelected ? '#1f2937' : '#ffffff',
+          fillOpacity: isSelected ? 1 : (selectedMunicipio ? 0.4 : 0.8),
         };
       };
 
@@ -173,6 +175,11 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
           mouseout: (e) => {
             layerRef.current.resetStyle(e.target);
           },
+          click: (e) => {
+            if (onMunicipioClick) {
+              onMunicipioClick(nome);
+            }
+          },
         });
       };
 
@@ -183,7 +190,7 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
 
       layerRef.current = geoLayer;
     });
-  }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients]);
+  }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients, selectedMunicipio, onMunicipioClick]);
 
   const metricOptions = [
     { value: 'valor', label: 'Valor (R$)' },
@@ -232,8 +239,13 @@ export default function MapChart({ data, geoData, metric = 'valor' }) {
         <span className="text-xs text-earth-500">Maior</span>
       </div>
 
-      <p className="text-xs text-earth-400 text-center mt-2">
-        Passe o mouse sobre um município para ver os detalhes
+      {selectedMunicipio && (
+        <p className="text-xs text-center text-primary-600 mt-2 font-medium">
+          Municipio selecionado: {selectedMunicipio}
+        </p>
+      )}
+      <p className="text-xs text-earth-400 text-center mt-1">
+        Clique em um municipio para filtrar. Passe o mouse para ver detalhes.
       </p>
     </div>
   );
