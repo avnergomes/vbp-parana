@@ -1,0 +1,61 @@
+name: Data Pipeline - Process VBP Data
+
+on:
+  # Manual trigger - execute quando novos dados Excel forem adicionados
+  workflow_dispatch:
+    inputs:
+      rebuild_all:
+        description: 'Reprocessar todos os dados'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl numpy
+
+      - name: Process data
+        run: |
+          python scripts/preprocess_data.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add -A
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update processed data
+
+          Dados atualizados automaticamente pelo pipeline.
+
+          Co-Authored-By: GitHub Actions <noreply@github.com>"
+          git push

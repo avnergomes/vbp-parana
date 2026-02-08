@@ -35,11 +35,8 @@ const MAX_PAYLOAD_SIZE = 10000;
 
 function isAllowedOrigin_(data) {
   var origin = data.origin || '';
-  if (!origin) return true;
-  for (var i = 0; i < ALLOWED_ORIGINS.length; i++) {
-    if (origin.indexOf(ALLOWED_ORIGINS[i]) === 0) return true;
-  }
-  return false;
+  if (!origin) return false;  // Rejeitar requisicoes sem origin
+  return ALLOWED_ORIGINS.indexOf(origin) !== -1;  // Match exato
 }
 
 function checkRateLimit_(sessionId) {
