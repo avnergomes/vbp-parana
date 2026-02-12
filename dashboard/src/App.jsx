@@ -14,6 +14,9 @@ import EvolutionChart from './components/EvolutionChart';
 import RegionalChart from './components/RegionalChart';
 import Footer from './components/Footer';
 import Loading from './components/Loading';
+// Advanced D3 Charts
+import RadarChart from './components/RadarChart';
+import SunburstChart from './components/SunburstChart';
 
 // ActiveFilters component for displaying clickable filter badges
 function ActiveFilters({ filters, onRemove, onClearAll }) {
@@ -247,6 +250,32 @@ export default function App() {
                   data={filteredData}
                   onRegionalClick={handleRegionalClick}
                   selectedRegional={interactiveFilters.regional}
+                />
+              </div>
+
+              {/* Advanced D3 Charts */}
+              <SunburstChart
+                data={filteredData}
+                title="Hierarquia de Valor: Cadeia > Subcadeia > Produto"
+                width={650}
+                height={550}
+                onCadeiaClick={handleCadeiaClick}
+                onSubcadeiaClick={handleSubcadeiaClick}
+                onProdutoClick={handleProdutoClick}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <RadarChart
+                  data={filteredData?.byMunicipio}
+                  title="Comparacao dos Top 5 Municipios"
+                  width={450}
+                  height={400}
+                />
+                <RadarChart
+                  data={filteredData?.byRegional}
+                  title="Comparacao das Top 5 Regionais"
+                  width={450}
+                  height={400}
                 />
               </div>
             </>
