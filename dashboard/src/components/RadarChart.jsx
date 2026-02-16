@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import * as d3 from 'd3'
 
-const MARGIN = { top: 40, right: 100, bottom: 40, left: 100 }
+const MARGIN = { top: 50, right: 120, bottom: 50, left: 50 }
 
 const COLORS = [
   '#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea',
@@ -80,8 +80,8 @@ export default function RadarChart({
   const innerWidth = width - MARGIN.left - MARGIN.right
   const innerHeight = height - MARGIN.top - MARGIN.bottom
   const radius = Math.min(innerWidth, innerHeight) / 2
-  const centerX = width / 2
-  const centerY = height / 2
+  const centerX = MARGIN.left + innerWidth / 2
+  const centerY = MARGIN.top + innerHeight / 2
 
   const { municipalities, variables } = chartData
   const angleSlice = (2 * Math.PI) / variables.length
