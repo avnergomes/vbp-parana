@@ -73,6 +73,14 @@ export default function Footer() {
               >
                 Emprego Agro
               </a>
+              <a
+                href="https://avnergomes.github.io/censo-parana/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-2.5 py-1 text-[10px] rounded-full border border-accent-200 bg-white/70 text-dark-600 hover:text-primary-600 hover:border-primary-300 transition-colors"
+              >
+                Censo Paraná
+              </a>
             </div>
           </div>
 
