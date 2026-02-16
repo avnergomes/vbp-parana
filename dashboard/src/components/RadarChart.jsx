@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import * as d3 from 'd3'
 
-const MARGIN = { top: 50, right: 120, bottom: 50, left: 80 }
+const MARGIN = { top: 40, right: 60, bottom: 40, left: 60 }
 
 const COLORS = [
   '#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea',
@@ -121,8 +121,8 @@ export default function RadarChart({
     <div className="bg-white rounded-xl shadow-lg p-6">
       <h3 className="text-lg font-semibold text-slate-700 mb-4">{title}</h3>
 
-      <div className="flex flex-col lg:flex-row gap-6 overflow-visible">
-        <svg width={width} height={height} className="mx-auto" style={{ overflow: 'visible' }}>
+      <div className="flex flex-col gap-4">
+        <svg width={width} height={height} className="mx-auto">
           <g transform={`translate(${centerX}, ${centerY})`}>
             {/* Grid circles */}
             {levels.map((level, i) => (
@@ -221,18 +221,14 @@ export default function RadarChart({
         </svg>
 
         {/* Legend */}
-        <div className="flex flex-col gap-2 min-w-[160px]">
-          <h4 className="text-sm font-semibold text-slate-600 mb-2">Top 5 Municípios</h4>
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 pt-2 border-t border-slate-100">
           {municipalities.map((mun, i) => (
-            <div key={mun.name} className="flex items-center gap-2">
+            <div key={mun.name} className="flex items-center gap-1.5">
               <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS[i % COLORS.length] }}
               />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-slate-700 truncate">{mun.name}</p>
-                <p className="text-xs text-slate-400">{mun.regional}</p>
-              </div>
+              <span className="text-xs text-slate-600">{mun.name}</span>
             </div>
           ))}
         </div>
