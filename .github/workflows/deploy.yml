@@ -47,6 +47,8 @@ jobs:
       - name: Build
         working-directory: ./dashboard
         run: npm run build
+        env:
+          VITE_TRACKING_URL: ${{ secrets.TRACKING_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
