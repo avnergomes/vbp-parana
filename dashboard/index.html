@@ -63,6 +63,10 @@
     <!-- URL configurada via GitHub Actions secret TRACKING_URL -->
     <script>
     (function() {
+      function hasLGPDConsent() {
+        return localStorage.getItem('lgpd-consent') === 'accepted';
+      }
+
       var TRACKING_URL = '%VITE_TRACKING_URL%';
       // Skip if URL not configured (placeholder not replaced)
       if (!TRACKING_URL || TRACKING_URL.indexOf('VITE_TRACKING_URL') !== -1) {
@@ -95,7 +99,7 @@
         };
       }
 
-      function trackVisitor() {
+      function initTracking() {
         try {
           var loadTime = 0;
           if (window.performance && window.performance.timing) {
@@ -142,14 +146,44 @@
         }
       }
 
-      // Track on page load
-      if (document.readyState === 'complete') {
-        setTimeout(trackVisitor, 100);
-      } else {
-        window.addEventListener('load', function() { setTimeout(trackVisitor, 100); });
+      window.initTracking = initTracking;
+
+      // Only track if user consented
+      if (hasLGPDConsent()) {
+        if (document.readyState === 'complete') {
+          setTimeout(initTracking, 100);
+        } else {
+          window.addEventListener('load', function() { setTimeout(initTracking, 100); });
+        }
       }
     })();
     </script>
+
+<!-- LGPD Consent Banner -->
+<div id="lgpd-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#1e293b; color:#e2e8f0; padding:1rem 1.5rem; z-index:9999; font-family:system-ui,sans-serif; font-size:0.875rem; box-shadow:0 -2px 10px rgba(0,0,0,0.2);">
+  <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+    <p style="margin:0; flex:1; min-width:280px; line-height:1.5;">
+      Este site utiliza cookies e tecnologias para melhorar sua experiencia.
+      Ao clicar em "Aceitar", voce concorda com a coleta de dados conforme a
+      <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" rel="noopener" style="color:#60a5fa; text-decoration:underline;">LGPD</a>.
+    </p>
+    <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+      <button onclick="document.getElementById('lgpd-banner').style.display='none'; localStorage.setItem('lgpd-consent','rejected');"
+        style="padding:0.5rem 1rem; border:1px solid #475569; border-radius:6px; background:transparent; color:#e2e8f0; cursor:pointer; font-size:0.8rem;">
+        Recusar
+      </button>
+      <button onclick="document.getElementById('lgpd-banner').style.display='none'; localStorage.setItem('lgpd-consent','accepted'); if(typeof initTracking==='function') initTracking();"
+        style="padding:0.5rem 1rem; border:none; border-radius:6px; background:#3b82f6; color:white; cursor:pointer; font-size:0.8rem; font-weight:500;">
+        Aceitar
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+  if (!localStorage.getItem('lgpd-consent')) {
+    document.getElementById('lgpd-banner').style.display = 'block';
+  }
+</script>
   </body>
 </html>
 
