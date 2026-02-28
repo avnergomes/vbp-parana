@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/vbp-parana/';
 
 /**
  * Hook para carregar e gerenciar os dados do dashboard
+ * Implementa lazy loading para arquivos grandes (detailed.json e municipios.geojson)
  */
 export function useData() {
   const [aggregated, setAggregated] = useState(null);
@@ -12,36 +13,33 @@ export function useData() {
   const [produtoMap, setProdutoMap] = useState(null);
   const [geoMap, setGeoMap] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isDetailedLoading, setIsDetailedLoading] = useState(false);
+  const [isGeoLoading, setIsGeoLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Carregar dados essenciais na inicialização (aggregated, produto_map, geo_map)
   useEffect(() => {
-    async function loadData() {
+    async function loadInitialData() {
       try {
         setLoading(true);
 
-        const [aggRes, detailedRes, geoRes, prodMapRes, geoMapRes] = await Promise.all([
+        const [aggRes, prodMapRes, geoMapRes] = await Promise.all([
           fetch(`${BASE_PATH}data/aggregated.json`),
-          fetch(`${BASE_PATH}data/detailed.json`),
-          fetch(`${BASE_PATH}data/municipios.geojson`),
           fetch(`${BASE_PATH}data/produto_map.json`),
           fetch(`${BASE_PATH}data/geo_map.json`),
         ]);
 
-        if (!aggRes.ok || !detailedRes.ok || !geoRes.ok) {
-          throw new Error('Erro ao carregar dados');
+        if (!aggRes.ok) {
+          throw new Error('Erro ao carregar dados agregados');
         }
 
-        const [aggData, detailedData, geoDataJson, prodMapData, geoMapData] = await Promise.all([
+        const [aggData, prodMapData, geoMapData] = await Promise.all([
           aggRes.json(),
-          detailedRes.json(),
-          geoRes.json(),
-          prodMapRes.json(),
-          geoMapRes.json(),
+          prodMapRes.ok ? prodMapRes.json() : null,
+          geoMapRes.ok ? geoMapRes.json() : null,
         ]);
 
         setAggregated(aggData);
-        setDetailed(detailedData);
-        setGeoData(geoDataJson);
         setProdutoMap(prodMapData);
         setGeoMap(geoMapData);
         setError(null);
@@ -52,8 +50,46 @@ export function useData() {
       }
     }
 
-    loadData();
+    loadInitialData();
   }, []);
+
+  // Função para carregar detailed.json sob demanda (80MB)
+  const loadDetailedData = useCallback(async () => {
+    if (detailed || isDetailedLoading) return;
+
+    try {
+      setIsDetailedLoading(true);
+      const res = await fetch(`${BASE_PATH}data/detailed.json`);
+      if (!res.ok) {
+        throw new Error('Erro ao carregar dados detalhados');
+      }
+      const data = await res.json();
+      setDetailed(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsDetailedLoading(false);
+    }
+  }, [detailed, isDetailedLoading]);
+
+  // Função para carregar municipios.geojson sob demanda (48MB)
+  const loadGeoData = useCallback(async () => {
+    if (geoData || isGeoLoading) return;
+
+    try {
+      setIsGeoLoading(true);
+      const res = await fetch(`${BASE_PATH}data/municipios.geojson`);
+      if (!res.ok) {
+        throw new Error('Erro ao carregar dados geográficos');
+      }
+      const data = await res.json();
+      setGeoData(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsGeoLoading(false);
+    }
+  }, [geoData, isGeoLoading]);
 
   return {
     aggregated,
@@ -62,7 +98,11 @@ export function useData() {
     produtoMap,
     geoMap,
     loading,
+    isDetailedLoading,
+    isGeoLoading,
     error,
+    loadDetailedData,
+    loadGeoData,
   };
 }
 
