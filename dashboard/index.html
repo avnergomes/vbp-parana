@@ -102,8 +102,10 @@
       function initTracking() {
         try {
           var loadTime = 0;
-          if (window.performance && window.performance.timing) {
-            loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+          // Navigation Timing Level 2 API (replaces deprecated performance.timing)
+          var navEntry = window.performance && window.performance.getEntriesByType ? window.performance.getEntriesByType('navigation')[0] : null;
+          if (navEntry) {
+            loadTime = Math.round(navEntry.loadEventEnd);
           }
 
           var utmParams = getUTMParams();
