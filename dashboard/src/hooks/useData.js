@@ -19,14 +19,17 @@ export function useData() {
 
   // Carregar dados essenciais na inicialização (aggregated, produto_map, geo_map)
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     async function loadInitialData() {
       try {
         setLoading(true);
 
         const [aggRes, prodMapRes, geoMapRes] = await Promise.all([
-          fetch(`${BASE_PATH}data/aggregated.json`),
-          fetch(`${BASE_PATH}data/produto_map.json`),
-          fetch(`${BASE_PATH}data/geo_map.json`),
+          fetch(`${BASE_PATH}data/aggregated.json`, { signal }),
+          fetch(`${BASE_PATH}data/produto_map.json`, { signal }),
+          fetch(`${BASE_PATH}data/geo_map.json`, { signal }),
         ]);
 
         if (!aggRes.ok) {
@@ -39,18 +42,25 @@ export function useData() {
           geoMapRes.ok ? geoMapRes.json() : null,
         ]);
 
-        setAggregated(aggData);
-        setProdutoMap(prodMapData);
-        setGeoMap(geoMapData);
-        setError(null);
+        if (!signal.aborted) {
+          setAggregated(aggData);
+          setProdutoMap(prodMapData);
+          setGeoMap(geoMapData);
+          setError(null);
+        }
       } catch (err) {
-        setError(err.message);
+        if (err.name !== 'AbortError') {
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
     loadInitialData();
+    return () => controller.abort();
   }, []);
 
   // Função para carregar detailed.json sob demanda (80MB)
