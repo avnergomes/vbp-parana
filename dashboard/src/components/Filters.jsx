@@ -12,15 +12,14 @@ export default function Filters({
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  if (!metadata) return null;
-
-  const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
-  const [anoMin, anoMax] = anos;
+  const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters || {};
+  const [anoMin, anoMax] = anos || [0, 0];
 
   // Derived filter options based on selections (only needed for non-simplified mode)
+  // All useMemo hooks BEFORE early return to comply with Rules of Hooks
   const availableSubcadeias = useMemo(() => {
-    if (simplified) return [];
-    if (!produtoMap || cadeias.length === 0) return metadata.filters?.subcadeias || [];
+    if (!metadata || simplified) return [];
+    if (!produtoMap || !cadeias?.length) return metadata.filters?.subcadeias || [];
     const subs = new Set();
     cadeias.forEach(cadeia => {
       if (produtoMap[cadeia]) {
@@ -31,16 +30,16 @@ export default function Filters({
   }, [produtoMap, cadeias, metadata, simplified]);
 
   const availableProdutos = useMemo(() => {
-    if (simplified) return [];
+    if (!metadata || simplified) return [];
     if (!produtoMap) return metadata.filters?.produtos || [];
-    if (cadeias.length === 0 && subcadeias.length === 0) {
+    if (!cadeias?.length && !subcadeias?.length) {
       return metadata.filters?.produtos || [];
     }
     const prods = new Set();
-    const targetCadeias = cadeias.length > 0 ? cadeias : Object.keys(produtoMap);
+    const targetCadeias = cadeias?.length > 0 ? cadeias : Object.keys(produtoMap);
     targetCadeias.forEach(cadeia => {
       if (produtoMap[cadeia]) {
-        const targetSubs = subcadeias.length > 0
+        const targetSubs = subcadeias?.length > 0
           ? subcadeias.filter(s => produtoMap[cadeia].subcadeias.includes(s))
           : produtoMap[cadeia].subcadeias;
         targetSubs.forEach(sub => {
@@ -54,7 +53,8 @@ export default function Filters({
   }, [produtoMap, cadeias, subcadeias, metadata, simplified]);
 
   const availableRegionais = useMemo(() => {
-    if (!geoMap || mesos.length === 0) return metadata.filters?.regionais || [];
+    if (!metadata) return [];
+    if (!geoMap || !mesos?.length) return metadata.filters?.regionais || [];
     const regs = new Set();
     mesos.forEach(meso => {
       if (geoMap[meso]) {
@@ -65,10 +65,10 @@ export default function Filters({
   }, [geoMap, mesos, metadata]);
 
   const availableMunicipios = useMemo(() => {
-    if (!geoMap) return [];
+    if (!metadata || !geoMap) return [];
 
     // Se há regionais selecionadas, mostrar municípios dessas regionais
-    if (regionais.length > 0) {
+    if (regionais?.length > 0) {
       const munis = new Set();
       Object.entries(geoMap).forEach(([meso, data]) => {
         Object.entries(data.municipios || {}).forEach(([regional, munList]) => {
@@ -81,7 +81,7 @@ export default function Filters({
     }
 
     // Se há mesos selecionadas, mostrar todos municípios dessas mesos
-    if (mesos.length > 0) {
+    if (mesos?.length > 0) {
       const munis = new Set();
       mesos.forEach(meso => {
         if (geoMap[meso]) {
@@ -97,6 +97,8 @@ export default function Filters({
     if (!metadata.filters?.municipios) return [];
     return metadata.filters.municipios.map(m => m.municipio_oficial).sort();
   }, [geoMap, mesos, regionais, metadata]);
+
+  if (!metadata) return null;
 
   const handleReset = () => {
     onFiltersChange({

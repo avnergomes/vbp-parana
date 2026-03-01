@@ -67,18 +67,23 @@ export function useData() {
   const loadDetailedData = useCallback(async () => {
     if (detailed || isDetailedLoading) return;
 
+    const controller = new AbortController();
     try {
       setIsDetailedLoading(true);
-      const res = await fetch(`${BASE_PATH}data/detailed.json`);
-      if (!res.ok) {
-        throw new Error('Erro ao carregar dados detalhados');
-      }
+      const res = await fetch(`${BASE_PATH}data/detailed.json`, { signal: controller.signal });
+      if (!res.ok) throw new Error('Erro ao carregar dados detalhados');
       const data = await res.json();
-      setDetailed(data);
+      if (!controller.signal.aborted) {
+        setDetailed(data);
+      }
     } catch (err) {
-      setError(err.message);
+      if (err.name !== 'AbortError') {
+        setError(err.message);
+      }
     } finally {
-      setIsDetailedLoading(false);
+      if (!controller.signal.aborted) {
+        setIsDetailedLoading(false);
+      }
     }
   }, [detailed, isDetailedLoading]);
 
@@ -86,18 +91,23 @@ export function useData() {
   const loadGeoData = useCallback(async () => {
     if (geoData || isGeoLoading) return;
 
+    const controller = new AbortController();
     try {
       setIsGeoLoading(true);
-      const res = await fetch(`${BASE_PATH}data/municipios.geojson`);
-      if (!res.ok) {
-        throw new Error('Erro ao carregar dados geográficos');
-      }
+      const res = await fetch(`${BASE_PATH}data/municipios.geojson`, { signal: controller.signal });
+      if (!res.ok) throw new Error('Erro ao carregar dados geográficos');
       const data = await res.json();
-      setGeoData(data);
+      if (!controller.signal.aborted) {
+        setGeoData(data);
+      }
     } catch (err) {
-      setError(err.message);
+      if (err.name !== 'AbortError') {
+        setError(err.message);
+      }
     } finally {
-      setIsGeoLoading(false);
+      if (!controller.signal.aborted) {
+        setIsGeoLoading(false);
+      }
     }
   }, [geoData, isGeoLoading]);
 
