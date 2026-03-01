@@ -6,9 +6,8 @@ import { Globe } from 'lucide-react';
 import { formatCurrency, formatNumber, CHART_COLORS } from '../utils/format';
 
 export default function RegionalChart({ data, onRegionalClick, selectedRegional }) {
-  if (!data?.byRegional?.length) return null;
-
   const chartData = useMemo(() => {
+    if (!data?.byRegional?.length) return [];
     return data.byRegional.slice(0, 22).map((item, idx) => ({
       name: item.regional_idr,
       valor: item.valor,
@@ -16,7 +15,9 @@ export default function RegionalChart({ data, onRegionalClick, selectedRegional 
       area: item.area,
       fill: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
     }));
-  }, [data.byRegional]);
+  }, [data?.byRegional]);
+
+  if (!chartData.length) return null;
 
   const handleBarClick = (entry) => {
     if (onRegionalClick && entry?.name) {

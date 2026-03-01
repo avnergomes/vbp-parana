@@ -9,10 +9,10 @@ import { formatCurrency, formatNumber, CHART_COLORS, calculateVariation, formatV
 export default function EvolutionChart({ data, onCadeiaClick, selectedCadeia }) {
   const [view, setView] = useState('stacked');
 
-  if (!data?.evolutionCadeia?.length) return null;
-
   // Prepare data for stacked area chart
   const stackedData = useMemo(() => {
+    if (!data?.evolutionCadeia?.length) return { data: [], cadeias: [] };
+
     const byYear = {};
     const cadeias = new Set();
 
@@ -28,11 +28,11 @@ export default function EvolutionChart({ data, onCadeiaClick, selectedCadeia }) 
       data: Object.values(byYear).sort((a, b) => a.ano - b.ano),
       cadeias: Array.from(cadeias),
     };
-  }, [data.evolutionCadeia]);
+  }, [data?.evolutionCadeia]);
 
   // Calculate YoY variations
   const variations = useMemo(() => {
-    if (!data.timeSeries || data.timeSeries.length < 2) return null;
+    if (!data?.timeSeries || data.timeSeries.length < 2) return null;
 
     const sorted = [...data.timeSeries].sort((a, b) => a.ano - b.ano);
     const last = sorted[sorted.length - 1];
@@ -45,7 +45,9 @@ export default function EvolutionChart({ data, onCadeiaClick, selectedCadeia }) 
       anoAtual: last.ano,
       anoAnterior: prev.ano,
     };
-  }, [data.timeSeries]);
+  }, [data?.timeSeries]);
+
+  if (!stackedData.data.length) return null;
 
   return (
     <div className="chart-container">

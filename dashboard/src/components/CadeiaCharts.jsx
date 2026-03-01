@@ -9,20 +9,20 @@ import { formatCurrency, formatNumber, CHART_COLORS } from '../utils/format';
 export default function CadeiaCharts({ data, onCadeiaClick, selectedCadeia }) {
   const [view, setView] = useState('bar');
 
-  if (!data?.byCadeia?.length) return null;
+  const chartData = useMemo(() => {
+    if (!data?.byCadeia?.length) return [];
+    return data.byCadeia.slice(0, 15).map((item, idx) => ({
+      name: item.cadeia,
+      valor: item.valor,
+      producao: item.producao,
+      area: item.area,
+      fill: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
+      selected: selectedCadeia === item.cadeia,
+    }));
+  }, [data?.byCadeia, selectedCadeia]);
 
-  const chartData = data.byCadeia.slice(0, 15).map((item, idx) => ({
-    name: item.cadeia,
-    valor: item.valor,
-    producao: item.producao,
-    area: item.area,
-    fill: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
-    selected: selectedCadeia === item.cadeia,
-  }));
-
-  // Data for treemap
   const treemapData = useMemo(() => {
-    if (!data.hierarchy) return [];
+    if (!data?.hierarchy) return [];
 
     const grouped = {};
     data.hierarchy.forEach(item => {
@@ -43,7 +43,9 @@ export default function CadeiaCharts({ data, onCadeiaClick, selectedCadeia }) {
       ...cadeia,
       color: CHART_COLORS.rainbow[idx % CHART_COLORS.rainbow.length],
     }));
-  }, [data.hierarchy]);
+  }, [data?.hierarchy]);
+
+  if (!chartData.length) return null;
 
   return (
     <div className="chart-container">
