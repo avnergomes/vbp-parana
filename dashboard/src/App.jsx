@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useData, useFilteredData } from './hooks/useData';
 
 // Components
@@ -65,7 +65,7 @@ function ActiveFilters({ filters, onRemove, onClearAll }) {
 }
 
 export default function App() {
-  const { aggregated, detailed, geoData, produtoMap, geoMap, loading, error } = useData();
+  const { aggregated, detailed, geoData, produtoMap, geoMap, loading, error, loadDetailedData, loadGeoData } = useData();
 
   // Dropdown filters state (kept for period and region hierarchy)
   const [filters, setFilters] = useState({
@@ -168,7 +168,7 @@ export default function App() {
   }, [filters, interactiveFilters]);
 
   // Initialize filters when data loads
-  useMemo(() => {
+  useEffect(() => {
     if (aggregated?.metadata) {
       setFilters(prev => ({
         ...prev,
@@ -176,6 +176,20 @@ export default function App() {
       }));
     }
   }, [aggregated?.metadata]);
+
+  // Lazy load detailed data when aggregated is available
+  useEffect(() => {
+    if (aggregated && !detailed) {
+      loadDetailedData();
+    }
+  }, [aggregated, detailed, loadDetailedData]);
+
+  // Lazy load geo data when map tab is activated
+  useEffect(() => {
+    if (activeTab === 'mapa' && !geoData) {
+      loadGeoData();
+    }
+  }, [activeTab, geoData, loadGeoData]);
 
   // Filter data using merged filters
   const filteredData = useFilteredData(aggregated, detailed, geoMap, mergedFilters);
