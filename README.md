@@ -1,180 +1,89 @@
-# VBP Paraná - Dashboard de Inteligência Territorial
+# VBP Paraná — Valor Bruto da Produção Agropecuária
 
-Dashboard interativo para análise do **Valor Bruto da Produção Agropecuária** do estado do Paraná, Brasil (2012-2024).
+Dashboard interativo do Valor Bruto da Produção Agropecuária do Paraná, cobrindo o período de 2012 a 2024. Permite explorar a evolução do VBP por cadeia produtiva, regional IDR e município.
 
-![Dashboard Preview](https://img.shields.io/badge/React-18-blue) ![Vite](https://img.shields.io/badge/Vite-5-purple) ![Tailwind](https://img.shields.io/badge/Tailwind-3-cyan) ![License](https://img.shields.io/badge/License-MIT-green)
+**🔗 [Acessar dashboard](https://avnergomes.github.io/vbp-parana/)**
 
-## Visão Geral
+Parte do ecossistema **[Datageo Paraná](https://datageoparana.github.io)**.
 
-Este dashboard permite explorar 13 anos de dados de produção agropecuária do Paraná, com visualizações interativas incluindo:
+## Sobre
 
-- **KPIs Principais**: Valor bruto, produção total e área cultivada
-- **Evolução Temporal**: Séries históricas com múltiplas métricas
-- **Análise por Cadeias**: Treemap, gráficos de pizza e barras
-- **Ranking de Produtos**: Tabela ordenável com busca
-- **Análise Regional**: Comparativo entre regionais IDR
-- **Mapa Coroplético**: Visualização geográfica interativa
+O Valor Bruto da Produção Agropecuária (VBP) é um dos principais indicadores da agropecuária paranaense, estimando a receita bruta gerada por lavouras e pecuária no estado. Este dashboard transforma os dados tabulares da SEAB/IDR-Paraná em visualizações interativas, facilitando a análise temporal e espacial da produção agropecuária.
+
+A ferramenta permite filtrar por período (2012–2024), por cadeia produtiva e por regional IDR, exibindo KPIs de VBP total, produção e área cultivada. O mapa coroplético de municípios e os gráficos de ranking, sunburst e radar complementam a análise com diferentes perspectivas sobre os dados.
+
+Os dados brutos são fornecidos em arquivos Excel (VBP2012.xlsx a vbp2024.xlsx) e processados automaticamente por um pipeline Python antes de serem publicados no dashboard.
+
+## Fonte de Dados
+
+- **SEAB/IDR-Paraná** — Secretaria da Agricultura e do Abastecimento do Paraná / Instituto de Desenvolvimento Rural do Paraná
+- Período: 2012–2024
+- Arquivos brutos: planilhas Excel anuais em `/data/`
 
 ## Tecnologias
 
-- **Frontend**: React 18 + Vite
-- **Estilização**: Tailwind CSS (tema rural/natural customizado)
-- **Gráficos**: Recharts
-- **Mapas**: Leaflet + React-Leaflet
-- **Ícones**: Lucide React
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | React 18, Vite 5, Tailwind CSS 3 |
+| Gráficos | Recharts, D3.js |
+| Mapas | Leaflet, React-Leaflet |
+| Pipeline | Python (Pandas) |
+| Deploy | GitHub Pages via GitHub Actions |
+| Tracking | LGPD-compliant (19 métricas anônimas) |
 
 ## Estrutura do Projeto
 
 ```
 vbp-parana/
-├── data/                      # Dados brutos (Excel)
-│   ├── VBP2012.xlsx          # Dados VBP 2012
-│   ├── ...                   # Anos 2013-2024
-│   ├── lista_produtos_vbp_2012_2024.xlsx  # Catálogo de produtos
-│   └── municipios_pr.xlsx    # Referência de municípios
-├── dashboard/                 # Aplicação React
+├── dashboard/          # Aplicação React
 │   ├── src/
-│   │   ├── components/       # Componentes React
-│   │   ├── hooks/           # Custom hooks
-│   │   └── utils/           # Utilitários
-│   ├── public/data/         # JSONs processados
-│   └── dist/                # Build de produção
-├── scripts/
-│   └── preprocess_data.py   # Script de processamento
-├── mun_PR.json              # GeoJSON dos municípios
-└── .github/workflows/       # CI/CD
+│   │   ├── App.jsx
+│   │   ├── components/ # 15 componentes
+│   │   └── hooks/      # useData.js
+│   ├── public/
+│   │   └── data/       # JSONs processados
+│   └── index.html
+├── scripts/            # Pipeline de dados (Python)
+│   └── preprocess_data.py
+├── data/               # Dados brutos (Excel VBP2012–VBP2024)
+├── .github/workflows/  # CI/CD
+│   ├── data-pipeline.yml
+│   └── deploy.yml
+└── README.md
 ```
-
-## Instalação
-
-### Pré-requisitos
-
-- Node.js 18+
-- Python 3.9+ (para preprocessamento)
-- npm ou yarn
-
-### Desenvolvimento Local
-
-1. **Clone o repositório**
-```bash
-git clone https://github.com/avnergomes/vbp-parana.git
-cd vbp-parana
-```
-
-2. **Processe os dados** (necessário apenas uma vez)
-```bash
-pip install pandas openpyxl
-python scripts/preprocess_data.py
-```
-
-3. **Instale as dependências do dashboard**
-```bash
-cd dashboard
-npm install
-```
-
-4. **Inicie o servidor de desenvolvimento**
-```bash
-npm run dev
-```
-
-5. Acesse `http://localhost:5173/vbp-parana/`
-
-### Build de Produção
-
-```bash
-cd dashboard
-npm run build
-```
-
-Os arquivos serão gerados em `dashboard/dist/`.
-
-## Deploy
-
-O projeto usa GitHub Actions para deploy automático no GitHub Pages. Cada push na branch `main` dispara o workflow que:
-
-1. Processa os dados Excel para JSON
-2. Builda a aplicação React
-3. Faz deploy no GitHub Pages
-
-### Manual
-
-Para deploy manual, após o build:
-
-```bash
-# Copie o conteúdo de dashboard/dist para seu servidor
-```
-
-## Dados
-
-### Fontes
-
-- **SEAB/IDR-Paraná**: Dados do Valor Bruto da Produção
-- **IBGE**: Malhas municipais (GeoJSON)
-
-### Cobertura
-
-- **Período**: 2012 a 2024 (13 anos)
-- **Municípios**: 399 municípios do Paraná
-- **Produtos**: 200+ produtos agrícolas e pecuários
-- **Cadeias**: 25 cadeias produtivas
-
-### Estrutura dos Dados Processados
-
-| Arquivo | Descrição | Tamanho |
-|---------|-----------|---------|
-| `aggregated.json` | Dados pré-agregados por dimensão | ~400 KB |
-| `detailed.json` | Dados do mapa por ano/município | ~550 KB |
-| `municipios.geojson` | Geometrias otimizadas | ~750 KB |
-| `produto_map.json` | Hierarquia cadeia > subcadeia > produto | ~15 KB |
-| `geo_map.json` | Hierarquia meso > regional > município | ~25 KB |
 
 ## Funcionalidades
 
-### Filtros Interativos
+- Filtros por período, cadeia produtiva e regional IDR
+- Mapa coroplético interativo de municípios paranaenses
+- Gráficos de evolução temporal do VBP
+- Ranking dos municípios por produção
+- Sunburst por cadeia produtiva
+- Radar dos top municípios produtores
+- KPIs de VBP total, produção total e área cultivada
+- Tracking LGPD-compliant com variável de ambiente `VITE_TRACKING_URL`
 
-- Período (ano inicial e final)
-- Mesorregião IDR
-- Regional IDR
-- Município
-- Cadeia produtiva
-- Subcadeia
-- Produto
+## Desenvolvimento Local
 
-### Visualizações
+```bash
+# Clone
+git clone https://github.com/avnergomes/vbp-parana.git
+cd vbp-parana/dashboard
 
-| Visualização | Descrição |
-|--------------|-----------|
-| KPIs | Cards com valor, produção e área |
-| Série Temporal | Evolução de valor, produção e área |
-| Cadeias (Barras) | Ranking de cadeias por valor |
-| Cadeias (Treemap) | Hierarquia visual de produção |
-| Cadeias (Pizza) | Distribuição percentual |
-| Ranking Produtos | Tabela ordenável top N produtos |
-| Ranking Municípios | Tabela ordenável top N municípios |
-| Regional | Comparativo entre regionais |
-| Evolução Empilhada | Área empilhada por cadeia |
-| Variação Anual | Comparativo ano a ano |
-| Mapa Coroplético | Valor/Produção/Área por município |
+# Instalar dependências
+npm install
 
-## Contribuição
+# Rodar em desenvolvimento
+npm run dev
 
-Contribuições são bem-vindas! Por favor:
+# Build para produção
+npm run build
+```
 
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+## Pipeline de Dados
+
+O script `scripts/preprocess_data.py` lê os arquivos Excel anuais em `/data/`, consolida e agrega os dados via Pandas e gera os JSONs em `dashboard/public/data/` (`aggregated.json`, `detailed.json`, `geo_map.json`, `produto_map.json`). O workflow `data-pipeline.yml` executa esse processamento automaticamente no GitHub Actions, e o `deploy.yml` realiza o build da aplicação React e a publicação no GitHub Pages.
 
 ## Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## Créditos
-
-Desenvolvido com dados públicos do estado do Paraná, Brasil.
-
----
-
-**VBP Paraná** - Inteligência Territorial da Produção Agropecuária
+Dados públicos. Dashboard desenvolvido por [Avner Gomes](https://avnergomes.github.io/portfolio/).
