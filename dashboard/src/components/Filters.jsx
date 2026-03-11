@@ -191,17 +191,29 @@ export default function Filters({
        anoMin !== metadata.anoMin ||
        anoMax !== metadata.anoMax);
 
+  const activeFilterCount = [
+    mesos.length > 0,
+    regionais.length > 0,
+    municipios.length > 0,
+    !simplified && cadeias.length > 0,
+    !simplified && subcadeias.length > 0,
+    !simplified && produtos.length > 0,
+    anoMin !== metadata.anoMin || anoMax !== metadata.anoMax,
+  ].filter(Boolean).length;
+
   return (
     <div className="card p-4 md:p-6 relative z-20">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-forest-100 rounded-lg">
             <Filter className="w-5 h-5 text-forest-600" />
           </div>
           <h2 className="text-lg font-display font-bold text-earth-900">Filtros</h2>
-          {hasActiveFilters && (
-            <span className="badge badge-green">Ativos</span>
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-primary-500 text-white">
+              {activeFilterCount}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -212,7 +224,7 @@ export default function Filters({
             title="Exportar dados filtrados em CSV"
           >
             <Download className="w-4 h-4" />
-            Exportar CSV
+            <span className="hidden sm:inline">Exportar CSV</span>
           </button>
           {hasActiveFilters && (
             <button
@@ -221,128 +233,127 @@ export default function Filters({
                          hover:bg-forest-50 rounded-lg transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              Limpar
+              <span className="hidden sm:inline">Limpar</span>
             </button>
           )}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-2 hover:bg-earth-100 rounded-lg transition-colors"
+            aria-label={isExpanded ? 'Recolher filtros' : 'Expandir filtros'}
           >
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-earth-500" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-earth-500" />
-            )}
+            <ChevronDown className={`w-5 h-5 text-earth-500 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
 
-      {isExpanded && (
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${simplified ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-4`}>
-          {/* Year Range */}
-          <div className={simplified ? '' : 'lg:col-span-2'}>
-            <label className="filter-label">Período</label>
-            <div className="flex items-center gap-3">
-              <select
-                value={anoMin}
-                onChange={(e) => onFiltersChange({ ...filters, anos: [parseInt(e.target.value), anoMax] })}
-                className="filter-select flex-1"
-              >
-                {metadata.anos?.map(ano => (
-                  <option key={ano} value={ano}>{ano}</option>
-                ))}
-              </select>
-              <span className="text-earth-400 font-medium">até</span>
-              <select
-                value={anoMax}
-                onChange={(e) => onFiltersChange({ ...filters, anos: [anoMin, parseInt(e.target.value)] })}
-                className="filter-select flex-1"
-              >
-                {metadata.anos?.filter(a => a >= anoMin).map(ano => (
-                  <option key={ano} value={ano}>{ano}</option>
-                ))}
-              </select>
+      <div className={`filter-panel ${isExpanded ? '' : 'collapsed'}`}>
+        <div>
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${simplified ? 'lg:grid-cols-4' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-4 pt-4`}>
+            {/* Year Range */}
+            <div className={simplified ? '' : 'lg:col-span-2'}>
+              <label className="filter-label">Período</label>
+              <div className="flex items-center gap-3">
+                <select
+                  value={anoMin}
+                  onChange={(e) => onFiltersChange({ ...filters, anos: [parseInt(e.target.value), anoMax] })}
+                  className="filter-select flex-1"
+                >
+                  {metadata.anos?.map(ano => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+                <span className="text-earth-400 font-medium">até</span>
+                <select
+                  value={anoMax}
+                  onChange={(e) => onFiltersChange({ ...filters, anos: [anoMin, parseInt(e.target.value)] })}
+                  className="filter-select flex-1"
+                >
+                  {metadata.anos?.filter(a => a >= anoMin).map(ano => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            {/* Mesorregião */}
+            <div>
+              <label className="filter-label">Mesorregião</label>
+              <MultiSelect
+                options={metadata.filters?.mesos || []}
+                selected={mesos}
+                onChange={(val) => onFiltersChange({ ...filters, mesos: val, regionais: [], municipios: [] })}
+                placeholder="Todas"
+              />
+            </div>
+
+            {/* Regional */}
+            <div>
+              <label className="filter-label">Regional IDR</label>
+              <MultiSelect
+                options={availableRegionais}
+                selected={regionais}
+                onChange={(val) => onFiltersChange({ ...filters, regionais: val, municipios: [] })}
+                placeholder="Todas"
+              />
+            </div>
+
+            {/* Município */}
+            <div>
+              <label className="filter-label">Município</label>
+              <MultiSelect
+                options={availableMunicipios}
+                selected={municipios}
+                onChange={(val) => onFiltersChange({ ...filters, municipios: val })}
+                placeholder="Todos"
+              />
+            </div>
+
+            {/* Product filters - only show when not simplified */}
+            {!simplified && (
+              <>
+                {/* Cadeia */}
+                <div>
+                  <label className="filter-label">Cadeia Produtiva</label>
+                  <MultiSelect
+                    options={metadata.filters?.cadeias || []}
+                    selected={cadeias}
+                    onChange={(val) => onFiltersChange({ ...filters, cadeias: val, subcadeias: [], produtos: [] })}
+                    placeholder="Todas"
+                  />
+                </div>
+
+                {/* Subcadeia */}
+                <div>
+                  <label className="filter-label">Subcadeia</label>
+                  <MultiSelect
+                    options={availableSubcadeias}
+                    selected={subcadeias}
+                    onChange={(val) => onFiltersChange({ ...filters, subcadeias: val, produtos: [] })}
+                    placeholder="Todas"
+                  />
+                </div>
+
+                {/* Produto */}
+                <div className="lg:col-span-2">
+                  <label className="filter-label">Produto</label>
+                  <MultiSelect
+                    options={availableProdutos}
+                    selected={produtos}
+                    onChange={(val) => onFiltersChange({ ...filters, produtos: val })}
+                    placeholder="Todos"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Mesorregião */}
-          <div>
-            <label className="filter-label">Mesorregião</label>
-            <MultiSelect
-              options={metadata.filters?.mesos || []}
-              selected={mesos}
-              onChange={(val) => onFiltersChange({ ...filters, mesos: val, regionais: [], municipios: [] })}
-              placeholder="Todas"
-            />
-          </div>
-
-          {/* Regional */}
-          <div>
-            <label className="filter-label">Regional IDR</label>
-            <MultiSelect
-              options={availableRegionais}
-              selected={regionais}
-              onChange={(val) => onFiltersChange({ ...filters, regionais: val, municipios: [] })}
-              placeholder="Todas"
-            />
-          </div>
-
-          {/* Município */}
-          <div>
-            <label className="filter-label">Município</label>
-            <MultiSelect
-              options={availableMunicipios}
-              selected={municipios}
-              onChange={(val) => onFiltersChange({ ...filters, municipios: val })}
-              placeholder="Todos"
-            />
-          </div>
-
-          {/* Product filters - only show when not simplified */}
-          {!simplified && (
-            <>
-              {/* Cadeia */}
-              <div>
-                <label className="filter-label">Cadeia Produtiva</label>
-                <MultiSelect
-                  options={metadata.filters?.cadeias || []}
-                  selected={cadeias}
-                  onChange={(val) => onFiltersChange({ ...filters, cadeias: val, subcadeias: [], produtos: [] })}
-                  placeholder="Todas"
-                />
-              </div>
-
-              {/* Subcadeia */}
-              <div>
-                <label className="filter-label">Subcadeia</label>
-                <MultiSelect
-                  options={availableSubcadeias}
-                  selected={subcadeias}
-                  onChange={(val) => onFiltersChange({ ...filters, subcadeias: val, produtos: [] })}
-                  placeholder="Todas"
-                />
-              </div>
-
-              {/* Produto */}
-              <div className="lg:col-span-2">
-                <label className="filter-label">Produto</label>
-                <MultiSelect
-                  options={availableProdutos}
-                  selected={produtos}
-                  onChange={(val) => onFiltersChange({ ...filters, produtos: val })}
-                  placeholder="Todos"
-                />
-              </div>
-            </>
+          {simplified && (
+            <p className="text-xs text-neutral-500 mt-3 text-center">
+              Clique nos graficos para filtrar por cadeia, produto ou municipio
+            </p>
           )}
         </div>
-      )}
-
-      {simplified && isExpanded && (
-        <p className="text-xs text-neutral-500 mt-3 text-center">
-          Clique nos graficos para filtrar por cadeia, produto ou municipio
-        </p>
-      )}
+      </div>
     </div>
   );
 }

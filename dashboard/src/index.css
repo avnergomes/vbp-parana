@@ -23,7 +23,7 @@
   }
 
   .stat-card {
-    @apply card p-6 relative overflow-hidden;
+    @apply card p-5 md:p-6 relative overflow-hidden;
   }
 
   .stat-card::before {
@@ -47,6 +47,22 @@
     @apply block text-sm font-medium text-neutral-700 mb-1.5;
   }
 
+  .filter-panel {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s ease, opacity 0.2s ease;
+    opacity: 1;
+  }
+
+  .filter-panel.collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  .filter-panel > div {
+    overflow: hidden;
+  }
+
   .tab-button {
     @apply px-6 py-3 text-sm font-medium rounded-xl transition-all duration-200
            text-neutral-600 hover:text-primary-700 hover:bg-primary-50;
@@ -61,7 +77,15 @@
   }
 
   .chart-container {
-    @apply card p-6;
+    @apply card p-4 md:p-6;
+  }
+
+  .chart-container-title {
+    @apply text-base font-display font-semibold text-dark-800 mb-1;
+  }
+
+  .chart-container-desc {
+    @apply text-xs text-neutral-500 mb-4;
   }
 
   .kpi-value {
@@ -87,6 +111,33 @@
 
   .badge-blue {
     @apply bg-secondary-100 text-secondary-800;
+  }
+
+  .active-filter-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium
+           bg-primary-50 text-primary-700 border border-primary-200/50
+           transition-all duration-150 hover:bg-primary-100;
+  }
+
+  .active-filter-badge button {
+    @apply p-0.5 rounded-full hover:bg-primary-200/50 transition-colors;
+  }
+
+  /* Shimmer loading skeleton */
+  .skeleton {
+    @apply relative overflow-hidden bg-neutral-200 rounded-lg;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 }
 
