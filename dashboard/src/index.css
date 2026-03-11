@@ -60,6 +60,10 @@
   }
 
   .filter-panel > div {
+    overflow: visible;
+  }
+
+  .filter-panel.collapsed > div {
     overflow: hidden;
   }
 
