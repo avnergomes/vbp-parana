@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl numpy
+          pip install -r scripts/requirements.txt
 
       - name: Process data
         run: |
