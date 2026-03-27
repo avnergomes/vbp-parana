@@ -1,6 +1,8 @@
 name: Data Pipeline - Process VBP Data
 
 on:
+  schedule:
+    - cron: '0 6 15 1 *'  # 15 de Janeiro, 6h UTC (dados anuais DERAL)
   # Manual trigger - execute quando novos dados Excel forem adicionados
   workflow_dispatch:
     inputs:
