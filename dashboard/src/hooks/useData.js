@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { feature } from 'topojson-client';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/vbp-parana/';
+const TOPO_URL = 'https://cdn.jsdelivr.net/gh/datageoparana/datageoparana.github.io@main/assets/parana-municipalities.topojson';
 
 /**
  * Hook para carregar e gerenciar os dados do dashboard
@@ -94,9 +96,10 @@ export function useData() {
     const controller = new AbortController();
     try {
       setIsGeoLoading(true);
-      const res = await fetch(`${BASE_PATH}data/municipios.geojson`, { signal: controller.signal });
+      const res = await fetch(TOPO_URL, { signal: controller.signal });
       if (!res.ok) throw new Error('Erro ao carregar dados geográficos');
-      const data = await res.json();
+      const topo = await res.json();
+      const data = feature(topo, topo.objects.municipalities);
       if (!controller.signal.aborted) {
         setGeoData(data);
       }

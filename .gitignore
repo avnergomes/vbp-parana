@@ -72,3 +72,4 @@ ENV/
 !.env.example
 dashboard/dist/
 *.gs
+dashboard/public/data/municipios.geojson
