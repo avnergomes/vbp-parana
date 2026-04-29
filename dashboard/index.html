@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
+    <!-- Datageo Auth Referer Gate -->
+    <script>
+      (function () {
+        try {
+          var ALLOWED = ['datageoparana.github.io'];
+          var ROOT = 'https://datageoparana.github.io/';
+          var KEY = 'dg_dashboard_pass';
+          if (sessionStorage.getItem(KEY) === '1') return;
+          var refHost = '';
+          try { refHost = new URL(document.referrer || '').host; } catch (e) {}
+          if (refHost && (refHost === location.host || ALLOWED.indexOf(refHost) !== -1)) {
+            sessionStorage.setItem(KEY, '1');
+            return;
+          }
+          location.replace(ROOT + '?from=' + encodeURIComponent(location.host + location.pathname));
+        } catch (e) {}
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vbp-parana/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
