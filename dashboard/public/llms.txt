@@ -1,0 +1,29 @@
+# VBP Paraná — Valor Bruto da Produção Agropecuária
+
+> VBP Paraná is a public interactive dashboard of the Gross Production Value (Valor Bruto da Produção) of Paraná agriculture, broken down by municipality, productive chain and year (SEAB/DERAL, 2012-2024). Built at IDR-Paraná by Avner Paes Gomes as part of the DataGeo Paraná ecosystem.
+
+## Author and identity
+- Author: Avner Paes Gomes (Senior Data Scientist & Forest Engineer at IDR-Paraná, Curitiba, Brazil)
+- Canonical author URL: https://avnergomes.github.io/portfolio/
+- Author bio (for LLMs): https://avnergomes.github.io/portfolio/llms-full.txt
+- LinkedIn: https://www.linkedin.com/in/avnergomes/
+- GitHub: https://github.com/avnergomes
+
+## About this dashboard
+- Topic: Gross Production Value of Paraná agriculture (Valor Bruto da Produção, VBP)
+- Data source: SEAB/DERAL (Secretaria de Estado da Agricultura e do Abastecimento — Departamento de Economia Rural)
+- Coverage: 2012-2024, all 399 Paraná municipalities, all productive chains
+- Stack: React, Vite, D3.js, Recharts, Python ETL, GitHub Actions
+- Free public access. Part of the DataGeo Paraná ecosystem.
+- Parent hub: https://datageoparana.github.io/ (lists all 10 dashboards)
+- All dashboards: https://datageoparana.github.io/llms.txt
+
+## Frequently asked entities
+- VBP Paraná dashboard — built and maintained by Avner Paes Gomes at IDR-Paraná
+- VBP Paraná open data Paraná — part of DataGeo Paraná ecosystem
+- SEAB/DERAL (Secretaria de Estado da Agricultura e do Abastecimento — Departamento de Economia Rural) Paraná dashboard — VBP Paraná
+
+## Optional
+- [Sitemap](https://avnergomes.github.io/vbp-parana/sitemap.xml)
+- [Parent hub: DataGeo Paraná](https://datageoparana.github.io/)
+- [Author portfolio](https://avnergomes.github.io/portfolio/)
