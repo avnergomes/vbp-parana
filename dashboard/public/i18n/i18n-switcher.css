@@ -1,0 +1,68 @@
+/* Language switcher — three chips, neutral by default. Themes via container. */
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  background: rgba(20, 17, 12, 0.04);
+  border: 1px solid rgba(20, 17, 12, 0.18);
+}
+.lang-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(20, 17, 12, 0.55);
+  transition: color 0.15s, background 0.15s;
+}
+.lang-chip:hover {
+  color: #14110c;
+  background: rgba(20, 17, 12, 0.05);
+}
+.lang-chip.is-active {
+  background: #14110c;
+  color: #f1e9d6;
+}
+.lang-chip:focus-visible {
+  outline: 2px solid #a8482c;
+  outline-offset: 2px;
+}
+.lang-flag {
+  font-size: 0.95rem;
+  filter: grayscale(0.1);
+}
+.lang-code { letter-spacing: 0.2em; }
+
+/* Dark / Observatory variant — adjust contrast on cosmic-ink surfaces. */
+.lang-switcher--obs,
+.lang-switcher--dark {
+  background: rgba(220, 230, 255, 0.04);
+  border-color: rgba(220, 230, 255, 0.14);
+}
+.lang-switcher--obs .lang-chip,
+.lang-switcher--dark .lang-chip {
+  color: rgba(220, 230, 255, 0.5);
+}
+.lang-switcher--obs .lang-chip:hover,
+.lang-switcher--dark .lang-chip:hover {
+  color: #e9ecf3;
+  background: rgba(220, 230, 255, 0.06);
+}
+.lang-switcher--obs .lang-chip.is-active,
+.lang-switcher--dark .lang-chip.is-active {
+  background: #00f5d4;
+  color: #001712;
+}
+
+@media (max-width: 540px) {
+  .lang-chip .lang-flag { display: none; }
+  .lang-chip { padding: 4px 8px; }
+}

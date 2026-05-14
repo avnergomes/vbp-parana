@@ -90,8 +90,27 @@
       gtag('config', 'GA_MEASUREMENT_ID');
     </script>
     -->
+  
+    <!-- ATLAS-I18N-PANEL-V1 -->
+    <link rel="stylesheet" href="./i18n/i18n-switcher.css" />
+    <script defer src="./i18n/i18n-dict.js"></script>
+    <script defer src="./i18n/i18n.js"></script>
+    <style>
+      .lang-fixed {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        z-index: 9990;
+        box-shadow: 0 6px 18px -8px rgba(20, 17, 12, 0.35);
+      }
+      @media (max-width: 640px) {
+        .lang-fixed { top: 8px; right: 8px; }
+      }
+    </style>
   </head>
   <body class="antialiased">
+    <div class="lang-fixed" data-i18n-switcher></div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 <!-- Analytics Tracking Script - Dados anonimizados (Art. 12 LGPD) -->
