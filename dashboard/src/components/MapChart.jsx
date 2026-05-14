@@ -1,3 +1,4 @@
+// ATLAS-A11Y-HEX-SWEPT
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../utils/format';
@@ -31,29 +32,29 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
   // Gradientes de cores para cada métrica (7 tons do mais claro ao mais escuro)
   const metricGradients = useMemo(() => ({
     valor: [
-      '#dcfce7', // verde muito claro
-      '#86efac', // verde claro
+      '#d9e6f0', // verde muito claro
+      '#87afcd', // verde claro
       '#4ade80', // verde médio-claro
-      '#22c55e', // verde médio (cor principal dos gráficos)
-      '#16a34a', // verde médio-escuro
-      '#15803d', // verde escuro
+      '#0072B2', // verde médio (cor principal dos gráficos)
+      '#005c8e', // verde médio-escuro
+      '#004a72', // verde escuro
       '#166534', // verde muito escuro
     ],
     producao: [
       '#e0f2fe', // azul muito claro
       '#7dd3fc', // azul claro
       '#38bdf8', // azul médio-claro
-      '#0ea5e9', // azul médio (cor principal dos gráficos)
-      '#0284c7', // azul médio-escuro
-      '#0369a1', // azul escuro
+      '#3d729c', // azul médio (cor principal dos gráficos)
+      '#2d5f7f', // azul médio-escuro
+      '#254e69', // azul escuro
       '#075985', // azul muito escuro
     ],
     area: [
       '#fef3c7', // amarelo muito claro
       '#fcd34d', // amarelo claro
-      '#fbbf24', // amarelo médio-claro
-      '#f59e0b', // laranja/amarelo médio (cor principal dos gráficos)
-      '#d97706', // laranja médio-escuro
+      '#e0b850', // amarelo médio-claro
+      '#c89b3c', // laranja/amarelo médio (cor principal dos gráficos)
+      '#a87f2d', // laranja médio-escuro
       '#b45309', // laranja escuro
       '#92400e', // laranja muito escuro
     ],

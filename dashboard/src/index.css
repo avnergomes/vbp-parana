@@ -221,3 +221,125 @@
   font-size: 11px !important;
   letter-spacing: 0.04em;
 }
+
+/* ATLAS-A11Y-V1 */
+/* ── Atlas Editorial — Accessibility & chart chrome ─────────────
+   Appended to each dashboard's src/index.css by patch_html.py.
+   Goals:
+     - WCAG AA contrast on text and interactive elements.
+     - Visible focus rings for keyboard navigation (filters, tabs).
+     - Recharts axes/grids/tooltips in Atlas tones, not Tailwind defaults.
+     - Daltonic-safe defaults: pair color with shape/pattern on critical UI.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Recharts — axes, grid, tooltip in Atlas neutrals.
+   Overrides any per-component fill/stroke that escaped the palette swap. */
+.recharts-cartesian-grid line,
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #d4c8a8 !important;
+}
+.recharts-cartesian-axis-line {
+  stroke: #b6a682 !important;
+}
+.recharts-cartesian-axis-tick-line {
+  stroke: #b6a682 !important;
+}
+.recharts-cartesian-axis-tick-value,
+.recharts-text {
+  fill: #3c342a !important;
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace !important;
+}
+.recharts-legend-item-text {
+  color: #3c342a !important;
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em;
+}
+.recharts-reference-line line {
+  stroke: #893824 !important;
+  stroke-dasharray: 4 4;
+}
+.recharts-tooltip-cursor {
+  fill: rgba(20, 17, 12, 0.06) !important;
+}
+
+/* Focus rings — high contrast, keyboard-visible.
+   Tailwind's default focus ring (forest/teal) can be invisible to
+   protanopes; we use the clay accent which is the most luminance-distinct
+   color on the parchment background. */
+*:focus-visible {
+  outline: 2px solid #a8482c;
+  outline-offset: 2px;
+}
+.filter-select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #a8482c;
+  outline-offset: 2px;
+}
+
+/* Skip link — keyboard users. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #14110c;
+  color: #f1e9d6;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: 1rem;
+}
+
+/* Daltonic-safe encoding for badges and status indicators.
+   The CSS class itself is preserved; we add a leading glyph for users who
+   can't distinguish badge-green from badge-yellow on a quick glance. */
+.badge::before {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  margin-right: 0.35rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.badge-green::before  { content: '▲'; }
+.badge-yellow::before { content: '●'; }
+.badge-blue::before   { content: '◆'; }
+.badge-red::before    { content: '■'; }
+
+/* Reduced motion — disable shimmer for users who request it. */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none !important; }
+  * { scroll-behavior: auto !important; }
+}
+
+/* High-contrast hover state on interactive table rows. */
+tr[role='button']:hover,
+tr.cursor-pointer:hover {
+  background-color: rgba(168, 72, 44, 0.06);
+}
+
+/* Accessible link underline — never rely on color alone. */
+a:not(.no-underline):not(.tab-button):not([class*='button']) {
+  text-decoration: underline;
+  text-decoration-color: rgba(20, 17, 12, 0.35);
+  text-underline-offset: 0.18em;
+}
+a:not(.no-underline):not(.tab-button):not([class*='button']):hover {
+  text-decoration-color: #a8482c;
+}
+
+/* Map legend chips — outline ensures the chip itself is perceivable. */
+.legend-chip {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  border: 1px solid rgba(20, 17, 12, 0.45);
+}

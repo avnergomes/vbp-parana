@@ -1,3 +1,4 @@
+// ATLAS-A11Y-HEX-SWEPT
 import { useMemo, useState } from 'react'
 import * as d3 from 'd3'
 
@@ -16,7 +17,7 @@ const CADEIA_COLORS = {
 }
 
 // Default color for cadeias not in the palette
-const DEFAULT_COLOR = '#64748b'
+const DEFAULT_COLOR = '#6e6453'
 
 export default function SunburstChart({
   data,

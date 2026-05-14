@@ -1,12 +1,11 @@
+// ATLAS-A11Y-HEX-SWEPT
 import { useMemo } from 'react'
 import * as d3 from 'd3'
 
 const MARGIN = { top: 40, right: 60, bottom: 40, left: 60 }
 
-const COLORS = [
-  '#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea',
-  '#0891b2', '#db2777', '#65a30d', '#c2410c', '#6366f1'
-]
+// ATLAS-PALETTE-V1 — Okabe-Ito daltonic-safe categorical
+const COLORS = ['#0072B2','#D55E00','#009E73','#E69F00','#CC79A7','#56B4E9','#F0E442','#2a2419']
 
 function polarToCartesian(angle, radius) {
   return {
@@ -141,7 +140,7 @@ export default function RadarChart({
                 key={`label-${i}`}
                 x={4}
                 y={-radiusScale(level)}
-                fill="#94a3b8"
+                fill="#918058"
                 fontSize={9}
                 alignmentBaseline="middle"
               >

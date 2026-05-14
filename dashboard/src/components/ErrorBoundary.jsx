@@ -1,3 +1,4 @@
+// ATLAS-A11Y-HEX-SWEPT
 import React from 'react';
 
 class ErrorBoundary extends React.Component {
@@ -20,7 +21,7 @@ class ErrorBoundary extends React.Component {
         <div style={{
           padding: '2rem',
           textAlign: 'center',
-          color: '#64748b',
+          color: '#6e6453',
           minHeight: '200px',
           display: 'flex',
           flexDirection: 'column',

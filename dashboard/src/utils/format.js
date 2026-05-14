@@ -103,22 +103,10 @@ export function calculateVariation(current, previous) {
 /**
  * Cores para gráficos
  */
-export const CHART_COLORS = {
-  primary: ['#22c55e', '#16a34a', '#15803d', '#166534', '#14532d'],
-  secondary: ['#0ea5e9', '#0284c7', '#0369a1', '#075985', '#0c4a6e'],
-  accent: ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f'],
-  earth: ['#a68f5b', '#8b7648', '#705e3a', '#5c4d32', '#4d412c'],
-  rainbow: [
-    '#22c55e', '#0ea5e9', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'
-  ],
-};
-
 /**
  * Gradientes para mapas
  */
-export const MAP_GRADIENTS = {
-  green: ['#dcfce7', '#86efac', '#22c55e', '#15803d', '#14532d'],
-  blue: ['#e0f2fe', '#7dd3fc', '#0ea5e9', '#0369a1', '#0c4a6e'],
-  yellow: ['#fef3c7', '#fcd34d', '#f59e0b', '#b45309', '#78350f'],
-};
+
+// ATLAS-PALETTE-V1
+// Re-export the shared Atlas Editorial palette (daltonic-safe).
+export { CHART_COLORS, MAP_GRADIENTS, ATLAS_CATEGORICAL, ATLAS_FOREST, ATLAS_WATER, ATLAS_CLAY, ATLAS_EARTH, ATLAS_HARVEST, ATLAS_DIVERGING, ATLAS_CHROME, categoricalColor, sequentialColor } from './chart-palette.js';
