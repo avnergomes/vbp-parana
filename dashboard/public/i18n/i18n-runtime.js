@@ -90,27 +90,25 @@
       if (!raw) continue;
       var trimmed = raw.trim();
       if (!trimmed) continue;
-      // Remember original PT text so we can re-translate after switching.
       var orig = c.__i18nOrig || trimmed;
-      var lookup = map[orig];
-      if (lookup && lookup !== orig) {
-        // Preserve leading/trailing whitespace.
-        var lead = raw.match(/^\s*/)[0];
-        var trail = raw.match(/\s*$/)[0];
-        c.nodeValue = lead + lookup + trail;
-        c.__i18nOrig = orig;
+      var target = map[orig] || orig;
+      var lead = raw.match(/^\s*/)[0];
+      var trail = raw.match(/\s*$/)[0];
+      var nextValue = lead + target + trail;
+      if (c.nodeValue !== nextValue) {
+        c.nodeValue = nextValue;
+        if (!c.__i18nOrig) c.__i18nOrig = orig;
       }
     }
-    // Translate selected attrs.
+    // Translate selected attrs (placeholder, title, aria-label).
     for (var a = 0; a < WALK_ATTRS.length; a++) {
       var aname = WALK_ATTRS[a];
       if (!node.hasAttribute(aname)) continue;
       var v = node.getAttribute(aname);
       if (!v) continue;
-      var key = node.__i18nAttrOrig && node.__i18nAttrOrig[aname];
-      key = key || v.trim();
-      var t = map[key];
-      if (t && t !== key) {
+      var key = (node.__i18nAttrOrig && node.__i18nAttrOrig[aname]) || v.trim();
+      var t = map[key] || key;
+      if (node.getAttribute(aname) !== t) {
         node.setAttribute(aname, t);
         node.__i18nAttrOrig = node.__i18nAttrOrig || {};
         node.__i18nAttrOrig[aname] = key;
@@ -148,40 +146,84 @@
       if (!raw) continue;
       var trimmed = raw.trim();
       if (!trimmed) continue;
+      // Use cached PT canonical if we've translated this node before.
       var orig = node.__i18nOrig || trimmed;
-      var lookup = map[orig];
-      if (lookup && lookup !== orig) {
-        var lead = raw.match(/^\s*/)[0];
-        var trail = raw.match(/\s*$/)[0];
-        node.nodeValue = lead + lookup + trail;
-        node.__i18nOrig = orig;
+      // Look up in target lang; fallback to PT canonical if no entry.
+      var target = map[orig] || orig;
+      var lead = raw.match(/^\s*/)[0];
+      var trail = raw.match(/\s*$/)[0];
+      var nextValue = lead + target + trail;
+      // Always restore the node to the correct lang value (so a stale
+      // translation from another lang doesn't linger).
+      if (node.nodeValue !== nextValue) {
+        node.nodeValue = nextValue;
+        if (!node.__i18nOrig) node.__i18nOrig = orig;
       }
     }
+  }
+
+  // Skip translation inside these elements — they contain chart geometry,
+  // SVG paths and other content that must not be rewritten by accident.
+  var SKIP_SUBTREES = ['script', 'style', 'svg', 'canvas', 'code', 'pre'];
+
+  function inSkippedSubtree(node) {
+    var p = node.parentNode;
+    while (p && p !== document.body) {
+      if (p.nodeType === 1) {
+        var tag = (p.tagName || '').toLowerCase();
+        if (SKIP_SUBTREES.indexOf(tag) !== -1) return true;
+        if (p.hasAttribute && p.hasAttribute('data-i18n-skip')) return true;
+      }
+      p = p.parentNode;
+    }
+    return false;
   }
 
   function walk(root) {
     root = root || document.body;
     if (!root) return;
-    var lang = getLang();
-    if (lang === 'pt') {
+    var map = getMap();
+    if (!map) {
+      // pt — restore originals.
       restorePt(root);
       return;
     }
-    var sel = SHALLOW.join(',');
-    // Translate the root itself if it matches.
-    try {
-      if (root.matches && root.matches(sel)) translateOne(root);
-    } catch (e) {}
-    // All descendants matching the whitelist (shallow translation).
-    try {
-      root.querySelectorAll(sel).forEach(translateOne);
-    } catch (e) {}
-    // Deep containers: walk every text node descendant.
-    try {
-      var deepSel = DEEP_CONTAINERS.join(',');
-      root.querySelectorAll(deepSel).forEach(walkDeep);
-      if (root.matches && root.matches(deepSel)) walkDeep(root);
-    } catch (e) {}
+    // TreeWalker over EVERY text node in the body. Strings not in the map
+    // fall back to their original (PT canonical), so the walker is safe to
+    // run over the entire document — only mapped strings change.
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while ((node = walker.nextNode())) {
+      var raw = node.nodeValue;
+      if (!raw) continue;
+      var trimmed = raw.trim();
+      if (!trimmed) continue;
+      if (inSkippedSubtree(node)) continue;
+      var orig = node.__i18nOrig || trimmed;
+      var target = map[orig] || orig;
+      var lead = raw.match(/^\s*/)[0];
+      var trail = raw.match(/\s*$/)[0];
+      var nextValue = lead + target + trail;
+      if (node.nodeValue !== nextValue) {
+        node.nodeValue = nextValue;
+        if (!node.__i18nOrig) node.__i18nOrig = orig;
+      }
+    }
+    // Translate placeholder / title / aria-label / alt on all elements.
+    root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(function (el) {
+      ['placeholder', 'title', 'aria-label'].forEach(function (aname) {
+        if (!el.hasAttribute(aname)) return;
+        var v = el.getAttribute(aname);
+        if (!v) return;
+        var key = (el.__i18nAttrOrig && el.__i18nAttrOrig[aname]) || v.trim();
+        var t = map[key] || key;
+        if (el.getAttribute(aname) !== t) {
+          el.setAttribute(aname, t);
+          el.__i18nAttrOrig = el.__i18nAttrOrig || {};
+          el.__i18nAttrOrig[aname] = key;
+        }
+      });
+    });
   }
 
   // Debounced re-walk on DOM mutations (React re-renders).
