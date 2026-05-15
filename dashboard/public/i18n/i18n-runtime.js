@@ -29,42 +29,42 @@
   // translated string.
   var ATTR_ORIG = 'data-i18n-orig';
 
-  // Whitelist: only walk inside these selectors. Conservative to avoid
-  // touching chart data, table cells with domain names, etc.
-  // Includes common React panel chrome + Atlas landing + Observatory.
-  var SELECTORS = [
-    'header', '.header', '.masthead',
-    '.tabs', '.tab', '.tab-label', '.tab-code',
-    'nav', '.nav', '.sidebar',
+  // Containers we walk EVERY text descendant of (deep). Use for sections
+  // with arbitrary nested chrome (footer columns, colophon, login card).
+  var DEEP_CONTAINERS = [
+    'header', '.header', '.masthead', '.masthead-foot', '.masthead-inner',
+    'nav', '.tabs', 'footer', '.site-footer', '.footer-col', '.footer-bottom',
+    '.colophon', '.colophon-body', '.colophon-aside', '.colophon-rule',
+    '.aside-block', '.aside-list',
+    '.login-overlay', '.login-card', '.login-header', '.login-form',
+    '.bug-modal', '.bug-dialog', '.bug-form',
+    '.lgpd-banner', '#lgpd-banner',
+    '.meta-strip', '.running-head', '.section', '.section-title', '.section-deck',
+    '.plate', '.plate-body', '.plate-stats', '.plate-end',
+    '.detail-panel',
+    '[data-i18n-translate]',
+  ];
+
+  // Specific element selectors translated as-is (direct text children only).
+  // Useful for elements where we don't want deep walking (e.g. buttons).
+  var SHALLOW = [
     'button', '.btn', '.btn-icon', '.btn-icon-label',
     'label', '.label-text', '.filter-label', '.filter-stats',
-    '.controls', '.filters',
+    '.tab-label', '.tab-code',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    '.panel-head', '.panel-desc', '.section-title', '.section-deck',
-    '.section-deck',
+    '.panel-head', '.panel-desc',
     '.kpi-label', '.kpi-sub',
     '.card h3', '.card h4', '.card-footer',
     '.access-label',
-    '.empty-state', '.empty-state p', '.empty-state-icon',
-    '.tz-legend', '.tz-legend-item',
-    '.heatmap-legend', '.heatmap-legend-label',
-    '.heatmap-day', '.heatmap-header',
+    '.tz-legend-item', '.heatmap-legend-label', '.heatmap-day', '.heatmap-header',
     '.toast',
-    '.detail-panel h2', '.detail-panel h3', '.detail-panel h4',
     '.insight',
     '.active-filter-badge', '.badge',
-    '.colofao', '.colophon', '.colophon-body', '.colophon-aside',
-    '.aside-label', '.aside-link',
-    '.site-footer', '.footer-col', '.footer-bottom',
-    '.bug-trigger', '.bug-modal', '.bug-dialog',
-    '.login-overlay', '.login-card', '.login-sub', '.login-footer',
+    '.aside-label', '.aside-link', '.aside-list li',
     '.lede', '.eyebrow', '.coords',
     '.plate-cat', '.plate-title', '.plate-desc', '.plate-arrow', '.plate-source',
-    '.plate-stats .stat-lbl', '.stat-lbl',
-    '.running-head', '.section',
-    '.meta-strip', '.meta-strip span',
+    '.stat-lbl',
     'option',
-    '[data-i18n-translate]',
   ];
 
   var WALK_ATTRS = ['placeholder', 'title', 'aria-label'];
@@ -137,6 +137,28 @@
     });
   }
 
+  function walkDeep(container) {
+    // TreeWalker over every text node inside the container.
+    var map = getMap();
+    if (!map) return;
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    var node;
+    while ((node = walker.nextNode())) {
+      var raw = node.nodeValue;
+      if (!raw) continue;
+      var trimmed = raw.trim();
+      if (!trimmed) continue;
+      var orig = node.__i18nOrig || trimmed;
+      var lookup = map[orig];
+      if (lookup && lookup !== orig) {
+        var lead = raw.match(/^\s*/)[0];
+        var trail = raw.match(/\s*$/)[0];
+        node.nodeValue = lead + lookup + trail;
+        node.__i18nOrig = orig;
+      }
+    }
+  }
+
   function walk(root) {
     root = root || document.body;
     if (!root) return;
@@ -145,18 +167,20 @@
       restorePt(root);
       return;
     }
-    var sel = SELECTORS.join(',');
+    var sel = SHALLOW.join(',');
     // Translate the root itself if it matches.
     try {
       if (root.matches && root.matches(sel)) translateOne(root);
     } catch (e) {}
-    // Then all descendants matching the whitelist.
+    // All descendants matching the whitelist (shallow translation).
     try {
       root.querySelectorAll(sel).forEach(translateOne);
     } catch (e) {}
-    // Always walk top-level elements with [data-i18n-translate].
+    // Deep containers: walk every text node descendant.
     try {
-      root.querySelectorAll('[data-i18n-translate]').forEach(translateOne);
+      var deepSel = DEEP_CONTAINERS.join(',');
+      root.querySelectorAll(deepSel).forEach(walkDeep);
+      if (root.matches && root.matches(deepSel)) walkDeep(root);
     } catch (e) {}
   }
 

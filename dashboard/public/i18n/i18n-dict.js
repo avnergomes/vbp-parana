@@ -48,6 +48,8 @@ window.__I18N__ = {
       title: "Datageo",
       titleAccent: "Paraná",
       lede: "Dez painéis de dados sobre o agronegócio, o emprego, a saúde, a segurança e a demografia paranaense. Cada placa é uma leitura editorial de fontes oficiais — DERAL, SICOR, ComexStat, RAIS, DATASUS, IBGE e SESP — apresentada com mapas, séries históricas e exportação.",
+      ledeHtml: '<span class="drop">U</span>m atlas vivo de dados públicos sobre <em>preços, produção, crédito, comércio exterior, emprego, saúde, segurança e demografia</em> do segundo maior celeiro do Brasil. Dez placas interativas montadas sobre fontes oficiais, com filtros, mapas e exportação.',
+      coordsHtml: '<b>10</b> placas interativas <span class="sep" aria-hidden="true"></span> <b>8</b> fontes oficiais <span class="sep" aria-hidden="true"></span> <b>399</b> municípios <span class="sep" aria-hidden="true"></span> Séries: <b>1991 → 2025</b>',
       cta: "Conhecer as placas",
     },
     section: {
@@ -104,6 +106,8 @@ window.__I18N__ = {
       stack: "Pilha técnica",
       sources: "Fontes oficiais",
       license: "Acesso público e gratuito. Dados das fontes mantêm sua licença original.",
+      paragraph1: 'O <em>Datageo Paraná</em> reúne dez painéis interativos sobre preços, produção, crédito rural, comércio exterior, emprego, saúde, segurança e demografia no estado. Tudo é construído a partir de fontes oficiais: DERAL/SEAB, SIMA, BCB/SICOR, ComexStat/MDIC, RAIS/MTE, DATASUS/MS, SESP-PR e IBGE.',
+      paragraph2: 'Cada placa permite consulta por produto, região, município e período, com visualizações em mapas, gráficos e tabelas exportáveis. O projeto é gratuito, sem vínculo institucional, e mantém o código e a documentação abertos.',
     },
     panels: {
       adm: "Administrações",
@@ -142,6 +146,10 @@ window.__I18N__ = {
       pt: "Português",
       en: "Inglês",
       es: "Espanhol",
+    },
+    lgpd: {
+      text: 'Este site coleta dados anonimizados de navegação (timestamp, página visitada, tipo de dispositivo) para fins estatísticos. Nenhum dado pessoal identificável é coletado. Saiba mais na <a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" rel="noopener">LGPD (Art. 12)</a>.',
+      accept: "Entendi",
     },
   },
   /* ─────────────────────────────────────────────────────────────────── */
@@ -186,6 +194,8 @@ window.__I18N__ = {
       title: "Datageo",
       titleAccent: "Paraná",
       lede: "Ten data dashboards covering Paraná's agribusiness, employment, health, public safety and demographics. Each plate is an editorial reading of official sources — DERAL, SICOR, ComexStat, RAIS, DATASUS, IBGE and SESP — rendered with maps, time series and CSV export.",
+      ledeHtml: '<span class="drop">A</span> living atlas of public data on <em>prices, production, credit, foreign trade, employment, health, public safety and demographics</em> of Brazil&rsquo;s second-largest agricultural state. Ten interactive plates built on official sources, with filters, maps and CSV export.',
+      coordsHtml: '<b>10</b> interactive plates <span class="sep" aria-hidden="true"></span> <b>8</b> official sources <span class="sep" aria-hidden="true"></span> <b>399</b> municipalities <span class="sep" aria-hidden="true"></span> Series: <b>1991 → 2025</b>',
       cta: "Open the plates",
     },
     section: {
@@ -242,6 +252,8 @@ window.__I18N__ = {
       stack: "Tech stack",
       sources: "Official sources",
       license: "Public and free access. Source data retain their original licence.",
+      paragraph1: '<em>Datageo Paraná</em> gathers ten interactive dashboards on prices, production, rural credit, foreign trade, employment, health, public safety and demographics in the state. Everything is built from official sources: DERAL/SEAB, SIMA, BCB/SICOR, ComexStat/MDIC, RAIS/MTE, DATASUS/MS, SESP-PR and IBGE.',
+      paragraph2: 'Each plate allows queries by product, region, municipality and period, with visualizations in maps, charts and exportable tables. The project is free, with no institutional affiliation, and keeps its code and documentation open.',
     },
     panels: {
       adm: "Hires",
@@ -280,6 +292,10 @@ window.__I18N__ = {
       pt: "Portuguese",
       en: "English",
       es: "Spanish",
+    },
+    lgpd: {
+      text: 'This site collects anonymized browsing data (timestamp, page visited, device type) for statistical purposes. No personally identifiable data is collected. Learn more in the Brazilian Data Protection Law (<a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" rel="noopener">LGPD, Art. 12</a>).',
+      accept: "Got it",
     },
   },
   /* ─────────────────────────────────────────────────────────────────── */
@@ -324,6 +340,8 @@ window.__I18N__ = {
       title: "Datageo",
       titleAccent: "Paraná",
       lede: "Diez paneles de datos sobre el agronegocio, el empleo, la salud, la seguridad y la demografía paranaense. Cada placa es una lectura editorial de fuentes oficiales — DERAL, SICOR, ComexStat, RAIS, DATASUS, IBGE y SESP — presentada con mapas, series históricas y exportación.",
+      ledeHtml: '<span class="drop">U</span>n atlas vivo de datos públicos sobre <em>precios, producción, crédito, comercio exterior, empleo, salud, seguridad y demografía</em> del segundo mayor granero de Brasil. Diez placas interactivas montadas sobre fuentes oficiales, con filtros, mapas y exportación.',
+      coordsHtml: '<b>10</b> placas interactivas <span class="sep" aria-hidden="true"></span> <b>8</b> fuentes oficiales <span class="sep" aria-hidden="true"></span> <b>399</b> municipios <span class="sep" aria-hidden="true"></span> Series: <b>1991 → 2025</b>',
       cta: "Conocer las placas",
     },
     section: {
@@ -380,6 +398,8 @@ window.__I18N__ = {
       stack: "Stack técnico",
       sources: "Fuentes oficiales",
       license: "Acceso público y gratuito. Los datos de origen mantienen su licencia original.",
+      paragraph1: '<em>Datageo Paraná</em> reúne diez paneles interactivos sobre precios, producción, crédito rural, comercio exterior, empleo, salud, seguridad y demografía en el estado. Todo se construye a partir de fuentes oficiales: DERAL/SEAB, SIMA, BCB/SICOR, ComexStat/MDIC, RAIS/MTE, DATASUS/MS, SESP-PR e IBGE.',
+      paragraph2: 'Cada placa permite consulta por producto, región, municipio y período, con visualizaciones en mapas, gráficos y tablas exportables. El proyecto es gratuito, sin vínculo institucional, y mantiene el código y la documentación abiertos.',
     },
     panels: {
       adm: "Altas",
@@ -418,6 +438,10 @@ window.__I18N__ = {
       pt: "Portugués",
       en: "Inglés",
       es: "Español",
+    },
+    lgpd: {
+      text: 'Este sitio recopila datos de navegación anonimizados (marca de tiempo, página visitada, tipo de dispositivo) con fines estadísticos. No se recopilan datos personales identificables. Conoce más en la Ley de Protección de Datos de Brasil (<a href="https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm" target="_blank" rel="noopener">LGPD, Art. 12</a>).',
+      accept: "Entendido",
     },
   },
 };
