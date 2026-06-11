@@ -1,22 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
-    <!-- Datageo Auth Referer Gate -->
+    <!-- Datageo Hub Banner — convite não bloqueante ao hub.
+         Substitui o antigo "referer gate", que expulsava acessos diretos
+         (favoritos, links compartilhados e visitantes vindos de buscadores)
+         e contradizia o SEO do painel. -->
     <script>
       (function () {
-        try {
-          var ALLOWED = ['datageoparana.github.io'];
-          var ROOT = 'https://datageoparana.github.io/';
-          var KEY = 'dg_dashboard_pass';
-          if (sessionStorage.getItem(KEY) === '1') return;
-          var refHost = '';
-          try { refHost = new URL(document.referrer || '').host; } catch (e) {}
-          if (refHost && (refHost === location.host || ALLOWED.indexOf(refHost) !== -1)) {
-            sessionStorage.setItem(KEY, '1');
-            return;
-          }
-          location.replace(ROOT + '?from=' + encodeURIComponent(location.host + location.pathname));
-        } catch (e) {}
+        var KEY = 'dg_hub_banner_dismissed';
+        try { if (localStorage.getItem(KEY) === '1') return; } catch (e) {}
+        var refHost = '';
+        try { refHost = new URL(document.referrer || '').hostname; } catch (e) {}
+        // Quem já navega dentro do ecossistema não precisa do convite
+        if (refHost === location.hostname || refHost === 'datageoparana.github.io') return;
+
+        function mount() {
+          if (!document.body) return;
+          var bar = document.createElement('div');
+          bar.setAttribute('role', 'region');
+          bar.setAttribute('aria-label', 'Datageo Paran\u00e1');
+          bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;padding:10px 16px;background:#14110c;color:#f1e9d6;font:14px/1.4 "IBM Plex Sans",system-ui,sans-serif;box-shadow:0 -2px 8px rgba(0,0,0,.25)';
+          var span = document.createElement('span');
+          span.textContent = 'Este painel faz parte do ecossistema Datageo Paran\u00e1.';
+          var a = document.createElement('a');
+          a.href = 'https://datageoparana.github.io/?from=' + encodeURIComponent(location.hostname + location.pathname);
+          a.textContent = 'Conhecer o hub';
+          a.style.cssText = 'color:#e0b850;font-weight:600;text-decoration:underline;white-space:nowrap';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.setAttribute('aria-label', 'Fechar');
+          btn.textContent = '\u00d7';
+          btn.style.cssText = 'background:none;border:0;color:#f1e9d6;font-size:20px;line-height:1;cursor:pointer;padding:0 4px';
+          btn.onclick = function () {
+            try { localStorage.setItem(KEY, '1'); } catch (e) {}
+            bar.parentNode && bar.parentNode.removeChild(bar);
+          };
+          bar.appendChild(span);
+          bar.appendChild(a);
+          bar.appendChild(btn);
+          document.body.appendChild(bar);
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', mount);
+        } else {
+          mount();
+        }
       })();
     </script>
 

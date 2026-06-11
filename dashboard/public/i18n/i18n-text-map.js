@@ -1253,6 +1253,10 @@ window.__I18N_TEXT_MAP__ = (function () {
     ["Fontes Oficiais", "Official Sources", "Fuentes Oficiales"],
     ["Frameworks e Documentacao", "Frameworks and Documentation", "Frameworks y Documentación"],
     ["Programas de Credito", "Credit Programs", "Programas de Crédito"],
+
+    // ── banner de convite ao hub (substituiu o referer gate) ─────────
+    ["Este painel faz parte do ecossistema Datageo Paraná.", "This dashboard is part of the Datageo Paraná ecosystem.", "Este panel forma parte del ecosistema Datageo Paraná."],
+    ["Conhecer o hub", "Visit the hub", "Conocer el hub"],
   ];
 
   var en = {}, es = {};
