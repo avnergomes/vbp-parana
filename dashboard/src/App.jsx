@@ -177,12 +177,26 @@ export default function App() {
     }
   }, [aggregated?.metadata]);
 
-  // Lazy load detailed data when aggregated is available
+  // detailed.json (~80 MB) é carregado sob demanda: quando o primeiro
+  // filtro é aplicado ou ao abrir a aba Mapa (que usa o recorte municipal).
+  // Antes era baixado e parseado em todo page load, bloqueando os visuais.
+  const needsDetailed = useMemo(() => {
+    const meta = aggregated?.metadata;
+    if (!meta) return false;
+    if (activeTab === 'mapa') return true;
+    const [anoMin, anoMax] = mergedFilters.anos || [];
+    const hasYearFilter = anoMin != null && anoMax != null &&
+      (anoMin !== meta.anoMin || anoMax !== meta.anoMax);
+    const hasListFilter = ['mesos', 'regionais', 'municipios', 'cadeias', 'subcadeias', 'produtos']
+      .some(key => (mergedFilters[key] || []).length > 0);
+    return hasYearFilter || hasListFilter;
+  }, [aggregated?.metadata, mergedFilters, activeTab]);
+
   useEffect(() => {
-    if (aggregated && !detailed) {
+    if (aggregated && !detailed && needsDetailed) {
       loadDetailedData();
     }
-  }, [aggregated, detailed, loadDetailedData]);
+  }, [aggregated, detailed, needsDetailed, loadDetailedData]);
 
   // Lazy load geo data when map tab is activated
   useEffect(() => {
@@ -281,7 +295,7 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <RadarChart
                   data={filteredData?.byMunicipio}
-                  title="Comparacao dos Top 5 Municipios"
+                  title="Comparação dos Top 5 Municípios"
                   width={450}
                   height={400}
                 />

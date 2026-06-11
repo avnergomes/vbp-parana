@@ -43,7 +43,8 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          git add -A
+          # Caminhos explicitos: git add -A arrastaria artefatos locais inesperados
+          git add dashboard/public/data data
           if git diff --staged --quiet; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
@@ -57,3 +58,17 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "chore: update processed data [skip ci]"
           git push
+
+      - name: Trigger deploy workflow
+        # O [skip ci] (e o GITHUB_TOKEN) impedem o deploy automatico no push
+        # do bot; o dispatch garante que o site acompanhe os dados novos.
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy.yml',
+              ref: 'main'
+            })

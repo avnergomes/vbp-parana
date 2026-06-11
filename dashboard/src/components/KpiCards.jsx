@@ -107,7 +107,7 @@ function VariationBadge({ variation }) {
   return (
     <div className={`flex items-center gap-0.5 md:gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md md:rounded-lg text-[10px] md:text-xs font-medium
       ${isPositive ? 'bg-primary-100 text-primary-700' : ''}
-      ${isNegative ? 'bg-red-100 text-red-700' : ''}
+      ${isNegative ? 'bg-orange-100 text-orange-800' : ''}
       ${!isPositive && !isNegative ? 'bg-neutral-100 text-neutral-600' : ''}`}
     >
       {isPositive && <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3" />}

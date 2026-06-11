@@ -222,14 +222,14 @@ function VariationView({ variations }) {
             <div key={idx} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-earth-600">{item.label}</span>
-                <span className={isPositive ? 'text-forest-600' : 'text-red-600'}>
+                <span className={isPositive ? 'text-sky-700' : 'text-orange-700'}>
                   {isPositive ? '+' : ''}{percent.toFixed(1)}%
                 </span>
               </div>
               <div className="h-3 bg-earth-100 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
-                    isPositive ? 'bg-forest-500' : 'bg-red-500'
+                    isPositive ? 'bg-sky-600' : 'bg-orange-600'
                   }`}
                   style={{ width: `${width}%` }}
                 />
@@ -263,8 +263,8 @@ function VariationCard({ label, variation, color }) {
           )}
         </div>
         <span className={`text-2xl font-bold ${
-          variation.isPositive ? 'text-forest-600' :
-          variation.isNegative ? 'text-red-600' :
+          variation.isPositive ? 'text-sky-700' :
+          variation.isNegative ? 'text-orange-700' :
           'text-earth-600'
         }`}>
           {variation.text}

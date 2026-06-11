@@ -207,7 +207,8 @@ def load_reference_tables() -> Tuple[pd.DataFrame, pd.DataFrame, Dict[str, str]]
         produto_correcoes = produto_correcoes.dropna(subset=["produto_original", "produto_corrigido"])
         produto_correcoes["produto_norm_original"] = produto_correcoes["produto_original"].apply(normalize_text)
         produto_correcoes["produto_norm_corrigido"] = produto_correcoes["produto_corrigido"].apply(normalize_text)
-    except:
+    except Exception as exc:
+        print(f'AVISO: falha ao ler aba de correcoes: {exc}')
         produto_correcoes = pd.DataFrame(columns=["produto_norm_original", "produto_norm_corrigido"])
 
     correction_map = build_product_correction_map(produto_correcoes, produto_catalogo)
@@ -742,7 +743,8 @@ def main():
 
     # Copiar GeoJSON
     print("\n5. Processando GeoJSON...")
-    copy_geojson()
+    # copy_geojson() removido: municipios.geojson (48 MB) era publicado no
+    # Pages sem nenhum consumidor (o mapa usa o TopoJSON de 4,4 MB do hub).
 
     # Resumo
     print("\n" + "=" * 60)

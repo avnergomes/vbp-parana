@@ -73,3 +73,6 @@ ENV/
 dashboard/dist/
 *.gs
 dashboard/public/data/municipios.geojson
+
+# Artefatos locais do understand-anything
+.understand-anything/

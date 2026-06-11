@@ -11,9 +11,9 @@ const CADEIA_COLORS = {
   'Florestal': '#009E73',
   'Fruticultura': '#56B4E9',
   'Olericultura': '#F0E442',
-  'Aquicultura & Pesca': '#0072B2',
-  'Cerealicultura': '#999999',
-  'Apicultura': '#D55E00',
+  'Aquicultura & Pesca': '#2f88c4',
+  'Cerealicultura': '#b8ad32',
+  'Apicultura': '#7a5200',
 }
 
 // Default color for cadeias not in the palette
@@ -84,7 +84,7 @@ export default function SunburstChart({
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-lg font-semibold text-dark-700 mb-4">{title}</h3>
         <div className="h-64 flex items-center justify-center text-dark-400">
-          Sem dados hierarquicos disponiveis
+          Sem dados hierárquicos disponíveis
         </div>
       </div>
     )

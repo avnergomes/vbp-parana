@@ -135,7 +135,7 @@ export function useData() {
  */
 export function useFilteredData(aggregated, detailed, geoMap, filters) {
   return useMemo(() => {
-    if (!aggregated || !detailed) return null;
+    if (!aggregated) return null;
 
     const { anos, mesos, regionais, municipios, cadeias, subcadeias, produtos } = filters;
     const [anoMin, anoMax] = anos;
@@ -149,6 +149,9 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     const hasProdutoFilter = produtos.length > 0;
     const hasProdutoFilterAny = hasCadeiaFilter || hasSubcadeiaFilter || hasProdutoFilter;
     const hasAnyFilter = hasYearFilter || hasGeoFilter || hasProdutoFilterAny;
+    // detailed.json (80 MB) é carregado sob demanda; enquanto não chega,
+    // todos os blocos abaixo caem nos agregados (visão sem filtro).
+    const useDetailed = !!detailed;
 
     // Calcular regionais alvo
     const regionaisFromMesos = mesos.length > 0 && geoMap
@@ -198,9 +201,9 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     // === FILTRAR DATASET CRUZADO ===
     // Quando há filtro de município, usar byAnoProdutoMunicipio para maior precisão
     // Caso contrário, usar byAnoProdutoRegional
-    let filteredCrossData;
+    let filteredCrossData = [];
 
-    if (municipios.length > 0 && detailed.byAnoProdutoMunicipio) {
+    if (useDetailed && municipios.length > 0 && detailed.byAnoProdutoMunicipio) {
       // Usar dataset de município quando há filtro de município
       filteredCrossData = detailed.byAnoProdutoMunicipio.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
@@ -235,7 +238,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
         regionalGroups[key].ar += item.ar;
       });
       filteredCrossData = Object.values(regionalGroups);
-    } else {
+    } else if (useDetailed) {
       // Usar dataset regional padrão
       filteredCrossData = detailed.byAnoProdutoRegional.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
@@ -250,7 +253,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === SÉRIE TEMPORAL ===
     let timeSeries;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const byYear = {};
       filteredCrossData.forEach(item => {
         if (!byYear[item.a]) {
@@ -277,7 +280,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === POR CADEIA ===
     let byCadeia;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         if (!grouped[item.c]) {
@@ -294,7 +297,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === POR SUBCADEIA ===
     let bySubcadeia;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         const key = `${item.c}|${item.s}`;
@@ -312,7 +315,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === POR PRODUTO ===
     let byProduto;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         if (!grouped[item.n]) {
@@ -329,7 +332,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === POR REGIONAL ===
     let byRegional;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         if (!grouped[item.r]) {
@@ -346,7 +349,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === POR MESORREGIÃO ===
     let byMeso;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         if (!grouped[item.m]) {
@@ -366,7 +369,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     // Caso contrário usa mapData (mais leve, sem dimensão de produto)
     const mapByMunicipio = {};
 
-    if ((hasProdutoFilterAny || municipios.length > 0) && detailed.byAnoProdutoMunicipio) {
+    if (useDetailed && (hasProdutoFilterAny || municipios.length > 0) && detailed.byAnoProdutoMunicipio) {
       // Filtrar dataset com granularidade município + produto
       const filteredMapData = detailed.byAnoProdutoMunicipio.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
@@ -386,7 +389,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
         mapByMunicipio[item.cod].producao += item.p;
         mapByMunicipio[item.cod].area += item.ar;
       });
-    } else {
+    } else if (useDetailed) {
       // Usar mapData simples (sem filtros de produto ou município)
       const filteredMapData = detailed.mapData.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
@@ -408,7 +411,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === HIERARCHY para treemap ===
     let hierarchy;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         const key = `${item.c}|${item.s}|${item.n}`;
@@ -426,7 +429,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === EVOLUÇÃO POR CADEIA ===
     let evolutionCadeia;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         const key = `${item.a}|${item.c}`;
@@ -442,7 +445,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
 
     // === TOP PRODUTOS POR ANO ===
     let topProdutosAno;
-    if (hasAnyFilter) {
+    if (hasAnyFilter && useDetailed) {
       const byAnoProduct = {};
       filteredCrossData.forEach(item => {
         const key = `${item.a}|${item.n}`;

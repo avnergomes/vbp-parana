@@ -8,6 +8,9 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
   const mapInstanceRef = useRef(null);
   const layerRef = useRef(null);
   const [selectedMetric, setSelectedMetric] = useState(metric);
+  // O import dinâmico do Leaflet termina depois do efeito da camada rodar;
+  // este estado re-dispara a criação do coroplético quando o mapa fica pronto.
+  const [mapReady, setMapReady] = useState(false);
 
   const municipioData = useMemo(() => {
     if (!data?.byMunicipio) return {};
@@ -29,34 +32,35 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
     };
   }, [data, selectedMetric]);
 
-  // Gradientes de cores para cada métrica (7 tons do mais claro ao mais escuro)
+  // Gradientes sequenciais de matiz único (luminância monotônica, seguros
+  // para daltônicos). A rampa de "valor" misturava verdes e azuis.
   const metricGradients = useMemo(() => ({
     valor: [
-      '#d9e6f0', // verde muito claro
-      '#87afcd', // verde claro
-      '#4ade80', // verde médio-claro
-      '#0072B2', // verde médio (cor principal dos gráficos)
-      '#005c8e', // verde médio-escuro
-      '#004a72', // verde escuro
-      '#166534', // verde muito escuro
+      '#eff6fc',
+      '#d9e6f0',
+      '#b4cce0',
+      '#87afcd',
+      '#5d8fb5',
+      '#3d729c',
+      '#254e69',
     ],
     producao: [
-      '#e0f2fe', // azul muito claro
-      '#7dd3fc', // azul claro
-      '#38bdf8', // azul médio-claro
-      '#3d729c', // azul médio (cor principal dos gráficos)
-      '#2d5f7f', // azul médio-escuro
-      '#254e69', // azul escuro
-      '#075985', // azul muito escuro
+      '#e6ebd5',
+      '#ccd6ad',
+      '#aabe7c',
+      '#84a155',
+      '#678338',
+      '#3d5320',
+      '#232f17',
     ],
     area: [
-      '#fef3c7', // amarelo muito claro
-      '#fcd34d', // amarelo claro
-      '#e0b850', // amarelo médio-claro
-      '#c89b3c', // laranja/amarelo médio (cor principal dos gráficos)
-      '#a87f2d', // laranja médio-escuro
-      '#b45309', // laranja escuro
-      '#92400e', // laranja muito escuro
+      '#f6e9c5',
+      '#ecd28a',
+      '#e0b850',
+      '#c89b3c',
+      '#a87f2d',
+      '#876522',
+      '#4d3915',
     ],
   }), []);
 
@@ -81,18 +85,20 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
       }).addTo(map);
 
       mapInstanceRef.current = map;
+      setMapReady(true);
     });
 
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        setMapReady(false);
       }
     };
   }, [geoData]);
 
   useEffect(() => {
-    if (!mapInstanceRef.current || !geoData) return;
+    if (!mapReady || !mapInstanceRef.current || !geoData) return;
 
     import('leaflet').then(L => {
       // Remove existing layer
@@ -103,7 +109,9 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
       const getColor = (value) => {
         if (!value || value === 0) return '#f3f4f6';
 
-        const normalized = (value - minVal) / (maxVal - minVal);
+        // maxVal === minVal (município único filtrado) dividiria por zero
+        const range = maxVal - minVal || 1;
+        const normalized = (value - minVal) / range;
         const colors = metricGradients[selectedMetric];
 
         const index = Math.min(Math.floor(normalized * colors.length), colors.length - 1);
@@ -191,7 +199,7 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
 
       layerRef.current = geoLayer;
     });
-  }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients, selectedMunicipio, onMunicipioClick]);
+  }, [geoData, municipioData, selectedMetric, minVal, maxVal, metricGradients, selectedMunicipio, onMunicipioClick, mapReady]);
 
   // Configuração das métricas com cores
   const metricConfig = {
@@ -247,11 +255,11 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
 
       {selectedMunicipio && (
         <p className="text-xs text-center text-primary-600 mt-2 font-medium">
-          Municipio selecionado: {selectedMunicipio}
+          Município selecionado: {selectedMunicipio}
         </p>
       )}
       <p className="text-xs text-earth-400 text-center mt-1">
-        Clique em um municipio para filtrar. Passe o mouse para ver detalhes.
+        Clique em um município para filtrar. Passe o mouse para ver detalhes.
       </p>
     </div>
   );
