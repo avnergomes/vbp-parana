@@ -1,6 +1,7 @@
 // ATLAS-A11Y-HEX-SWEPT
 import { useMemo } from 'react'
 import * as d3 from 'd3'
+import { formatCurrency, formatNumber } from '../utils/format'
 
 const MARGIN = { top: 40, right: 60, bottom: 40, left: 60 }
 
@@ -18,7 +19,9 @@ export default function RadarChart({
   data,
   title = "Comparação de Municípios",
   width = 500,
-  height = 420
+  height = 420,
+  isLoading = false,
+  onLoadRequest,
 }) {
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return null
@@ -69,8 +72,28 @@ export default function RadarChart({
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-lg font-semibold text-slate-700 mb-4">{title}</h3>
-        <div className="h-64 flex items-center justify-center text-slate-400">
-          Sem dados de municípios disponíveis
+        <div className="h-64 flex flex-col items-center justify-center gap-3 text-slate-500 text-center px-4">
+          {isLoading ? (
+            <>
+              <span
+                className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
+                aria-hidden="true"
+              />
+              <span>Carregando dados municipais (~80 MB)...</span>
+            </>
+          ) : onLoadRequest ? (
+            <>
+              <span>Os dados por município são carregados sob demanda.</span>
+              <button
+                onClick={onLoadRequest}
+                className="px-4 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                Carregar dados (~80 MB)
+              </button>
+            </>
+          ) : (
+            <span className="text-slate-400">Sem dados de municípios disponíveis</span>
+          )}
         </div>
       </div>
     )
@@ -105,15 +128,12 @@ export default function RadarChart({
     .angle((d, i) => i * angleSlice)
     .curve(d3.curveLinearClosed)
 
+  // Padrão pt-BR do ecossistema: sufixos bi/mi/mil com vírgula decimal
+  // (antes usava B/M/K com ponto, em conflito com utils/format.js).
   const formatValue = (v, axis) => {
-    if (axis.includes('R$')) {
-      if (v >= 1e9) return `R$${(v/1e9).toFixed(1)}B`
-      if (v >= 1e6) return `R$${(v/1e6).toFixed(1)}M`
-      return `R$${v.toFixed(0)}`
-    }
-    if (v >= 1e6) return `${(v/1e6).toFixed(1)}M`
-    if (v >= 1e3) return `${(v/1e3).toFixed(1)}K`
-    return v.toFixed(1)
+    if (axis.includes('R$')) return formatCurrency(v)
+    if (v >= 1e3) return formatNumber(v)
+    return v.toFixed(1).replace('.', ',')
   }
 
   return (

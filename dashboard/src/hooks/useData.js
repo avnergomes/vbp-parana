@@ -18,6 +18,10 @@ export function useData() {
   const [isDetailedLoading, setIsDetailedLoading] = useState(false);
   const [isGeoLoading, setIsGeoLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Erros dos carregamentos sob demanda ficam locais (não derrubam o app
+  // inteiro como o erro do carregamento inicial).
+  const [detailedError, setDetailedError] = useState(null);
+  const [geoError, setGeoError] = useState(null);
 
   // Carregar dados essenciais na inicialização (aggregated, produto_map, geo_map)
   useEffect(() => {
@@ -72,6 +76,7 @@ export function useData() {
     const controller = new AbortController();
     try {
       setIsDetailedLoading(true);
+      setDetailedError(null);
       const res = await fetch(`${BASE_PATH}data/detailed.json`, { signal: controller.signal });
       if (!res.ok) throw new Error('Erro ao carregar dados detalhados');
       const data = await res.json();
@@ -80,7 +85,7 @@ export function useData() {
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setError(err.message);
+        setDetailedError(err.message);
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -96,6 +101,7 @@ export function useData() {
     const controller = new AbortController();
     try {
       setIsGeoLoading(true);
+      setGeoError(null);
       const res = await fetch(TOPO_URL, { signal: controller.signal });
       if (!res.ok) throw new Error('Erro ao carregar dados geográficos');
       const topo = await res.json();
@@ -105,7 +111,7 @@ export function useData() {
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setError(err.message);
+        setGeoError(err.message);
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -124,6 +130,8 @@ export function useData() {
     isDetailedLoading,
     isGeoLoading,
     error,
+    detailedError,
+    geoError,
     loadDetailedData,
     loadGeoData,
   };

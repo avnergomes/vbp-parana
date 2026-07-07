@@ -734,6 +734,13 @@ window.__I18N_TEXT_MAP__ = (function () {
     ["Variação de", "Change of", "Variación de"],
     ["Área", "Area", "Área"],
     ["Área Empilhada", "Stacked Area", "Área Apilada"],
+    ["Carregando dados detalhados (~80 MB)...", "Loading detailed data (~80 MB)…", "Cargando datos detallados (~80 MB)…"],
+    ["Enquanto isso, os visuais abaixo mostram os totais do Paraná, sem os filtros aplicados.", "Meanwhile, the visuals below show Paraná state totals, without the applied filters.", "Mientras tanto, los visuales de abajo muestran los totales de Paraná, sin los filtros aplicados."],
+    ["Erro ao carregar os dados detalhados.", "Failed to load the detailed data.", "Error al cargar los datos detallados."],
+    ["Carregando dados municipais (~80 MB)...", "Loading municipal data (~80 MB)…", "Cargando datos municipales (~80 MB)…"],
+    ["Os dados por município são carregados sob demanda.", "Municipal-level data is loaded on demand.", "Los datos por municipio se cargan bajo demanda."],
+    ["Carregar dados (~80 MB)", "Load data (~80 MB)", "Cargar datos (~80 MB)"],
+    ["Não foi possível carregar o mapa.", "The map could not be loaded.", "No se pudo cargar el mapa."],
 
     // ── precos-diarios ───────────────────────────────────────────────
     ["(dados agregados)", "(aggregated data)", "(datos agregados)"],

@@ -23,7 +23,10 @@
           var span = document.createElement('span');
           span.textContent = 'Este painel faz parte do ecossistema Datageo Paran\u00e1.';
           var a = document.createElement('a');
-          a.href = 'https://datageoparana.github.io/?from=' + encodeURIComponent(location.hostname + location.pathname);
+          // ?ref= é só proveniência (analytics). Não usar ?from=: no hub,
+          // auth.js trata ?from= como destino pós-login e devolveria o
+          // usuário ao painel sem nunca mostrar o hub.
+          a.href = 'https://datageoparana.github.io/?ref=' + encodeURIComponent(location.hostname + location.pathname);
           a.textContent = 'Conhecer o hub';
           a.style.cssText = 'color:#e0b850;font-weight:600;text-decoration:underline;white-space:nowrap';
           var btn = document.createElement('button');
@@ -39,6 +42,22 @@
           bar.appendChild(a);
           bar.appendChild(btn);
           document.body.appendChild(bar);
+
+          // Empilha o convite acima do banner LGPD quando os dois estão
+          // visíveis (ambos eram fixed bottom:0 e este, com z-index maior,
+          // cobria o botão "Entendi" do LGPD).
+          function stackAboveLgpd() {
+            var lgpd = document.getElementById('lgpd-banner');
+            var visible = lgpd && lgpd.style.display !== 'none' && lgpd.offsetHeight > 0;
+            bar.style.bottom = visible ? lgpd.offsetHeight + 'px' : '0';
+          }
+          stackAboveLgpd();
+          window.addEventListener('resize', stackAboveLgpd);
+          var lgpdEl = document.getElementById('lgpd-banner');
+          if (lgpdEl && typeof MutationObserver === 'function') {
+            new MutationObserver(stackAboveLgpd)
+              .observe(lgpdEl, { attributes: true, attributeFilter: ['style'] });
+          }
         }
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', mount);
@@ -254,6 +273,24 @@
         var b = document.getElementById('lgpd-banner');
         if (b) b.style.display = 'block';
       }
+    </script>
+
+    <!-- Propaga o idioma escolhido para o hub no momento do clique
+         (origens diferentes não compartilham localStorage; sem isso a
+         volta painel -> hub perdia a escolha de idioma). -->
+    <script>
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        var a = t && t.closest ? t.closest('a[href^="https://datageoparana.github.io"]') : null;
+        if (!a) return;
+        try {
+          var lang = window.i18n && window.i18n.lang;
+          if (!lang) return;
+          var url = new URL(a.href);
+          url.searchParams.set('lang', lang);
+          a.href = url.toString();
+        } catch (err) {}
+      }, true);
     </script>
 </body>
 </html>

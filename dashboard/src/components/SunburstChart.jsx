@@ -1,6 +1,7 @@
 // ATLAS-A11Y-HEX-SWEPT
 import { useMemo, useState } from 'react'
 import * as d3 from 'd3'
+import { formatCurrency } from '../utils/format'
 
 // Colorblind-friendly palette for cadeias
 const CADEIA_COLORS = {
@@ -112,13 +113,9 @@ export default function SunburstChart({
     return d3.color(baseColor).brighter(0.6).toString()
   }
 
-  // Format value
-  const formatValue = (v) => {
-    if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(1)}B`
-    if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(1)}M`
-    if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(0)}K`
-    return `R$ ${v.toFixed(0)}`
-  }
+  // Padrão pt-BR do ecossistema: sufixos bi/mi/mil com vírgula decimal
+  // (antes usava B/M/K com ponto, em conflito com utils/format.js).
+  const formatValue = (v) => formatCurrency(v)
 
   // Handle click
   const handleClick = (d) => {

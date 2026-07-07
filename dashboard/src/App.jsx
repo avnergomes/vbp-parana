@@ -65,7 +65,20 @@ function ActiveFilters({ filters, onRemove, onClearAll }) {
 }
 
 export default function App() {
-  const { aggregated, detailed, geoData, produtoMap, geoMap, loading, error, loadDetailedData, loadGeoData } = useData();
+  const {
+    aggregated,
+    detailed,
+    geoData,
+    produtoMap,
+    geoMap,
+    loading,
+    isDetailedLoading,
+    error,
+    detailedError,
+    geoError,
+    loadDetailedData,
+    loadGeoData,
+  } = useData();
 
   // Dropdown filters state (kept for period and region hierarchy)
   const [filters, setFilters] = useState({
@@ -178,12 +191,13 @@ export default function App() {
   }, [aggregated?.metadata]);
 
   // detailed.json (~80 MB) é carregado sob demanda: quando o primeiro
-  // filtro é aplicado ou ao abrir a aba Mapa (que usa o recorte municipal).
-  // Antes era baixado e parseado em todo page load, bloqueando os visuais.
+  // filtro é aplicado ou ao abrir as abas Mapa e Regionais (que usam o
+  // recorte municipal). Antes era baixado e parseado em todo page load,
+  // bloqueando os visuais.
   const needsDetailed = useMemo(() => {
     const meta = aggregated?.metadata;
     if (!meta) return false;
-    if (activeTab === 'mapa') return true;
+    if (activeTab === 'mapa' || activeTab === 'regionais') return true;
     const [anoMin, anoMax] = mergedFilters.anos || [];
     const hasYearFilter = anoMin != null && anoMax != null &&
       (anoMin !== meta.anoMin || anoMax !== meta.anoMax);
@@ -193,17 +207,19 @@ export default function App() {
   }, [aggregated?.metadata, mergedFilters, activeTab]);
 
   useEffect(() => {
-    if (aggregated && !detailed && needsDetailed) {
+    // !detailedError evita loop de retentativas automáticas em caso de falha;
+    // o usuário decide tentar de novo pelo botão do aviso.
+    if (aggregated && !detailed && needsDetailed && !detailedError) {
       loadDetailedData();
     }
-  }, [aggregated, detailed, needsDetailed, loadDetailedData]);
+  }, [aggregated, detailed, needsDetailed, detailedError, loadDetailedData]);
 
   // Lazy load geo data when map tab is activated
   useEffect(() => {
-    if (activeTab === 'mapa' && !geoData) {
+    if (activeTab === 'mapa' && !geoData && !geoError) {
       loadGeoData();
     }
-  }, [activeTab, geoData, loadGeoData]);
+  }, [activeTab, geoData, geoError, loadGeoData]);
 
   // Filter data using merged filters
   const filteredData = useFilteredData(aggregated, detailed, geoMap, mergedFilters);
@@ -253,6 +269,39 @@ export default function App() {
           onClearAll={handleClearAllFilters}
         />
 
+        {/* Aviso do carregamento sob demanda do detailed.json (~80 MB):
+            sem ele, os visuais continuam mostrando os totais estaduais
+            sem filtro e o usuário acha que o filtro quebrou. */}
+        {needsDetailed && !detailed && isDetailedLoading && (
+          <div
+            className="flex flex-wrap items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-300 text-sm text-amber-900"
+            role="status"
+          >
+            <span
+              className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin flex-shrink-0"
+              aria-hidden="true"
+            />
+            <span className="font-medium">Carregando dados detalhados (~80 MB)...</span>
+            <span className="text-amber-800">
+              Enquanto isso, os visuais abaixo mostram os totais do Paraná, sem os filtros aplicados.
+            </span>
+          </div>
+        )}
+        {needsDetailed && !detailed && !isDetailedLoading && detailedError && (
+          <div
+            className="flex flex-wrap items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-300 text-sm text-red-900"
+            role="alert"
+          >
+            <span className="font-medium">Erro ao carregar os dados detalhados.</span>
+            <button
+              onClick={loadDetailedData}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
         {/* KPIs */}
         <KpiCards data={filteredData} />
 
@@ -298,6 +347,8 @@ export default function App() {
                   title="Comparação dos Top 5 Municípios"
                   width={450}
                   height={400}
+                  isLoading={isDetailedLoading}
+                  onLoadRequest={!detailed ? loadDetailedData : undefined}
                 />
                 <RadarChart
                   data={filteredData?.byRegional}
@@ -347,6 +398,7 @@ export default function App() {
                 type="municipios"
                 onMunicipioClick={handleMunicipioClick}
                 selectedMunicipio={interactiveFilters.municipio}
+                isLoading={!detailed && !detailedError}
               />
             </>
           )}
@@ -372,6 +424,9 @@ export default function App() {
               geoData={geoData}
               onMunicipioClick={handleMunicipioClick}
               selectedMunicipio={interactiveFilters.municipio}
+              geoError={geoError}
+              onRetryGeo={loadGeoData}
+              isDetailedLoading={isDetailedLoading}
             />
           )}
         </div>

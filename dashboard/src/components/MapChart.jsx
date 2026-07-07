@@ -3,7 +3,16 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { formatCurrency, formatNumber } from '../utils/format';
 
-export default function MapChart({ data, geoData, metric = 'valor', onMunicipioClick, selectedMunicipio }) {
+export default function MapChart({
+  data,
+  geoData,
+  metric = 'valor',
+  onMunicipioClick,
+  selectedMunicipio,
+  geoError = null,
+  onRetryGeo,
+  isDetailedLoading = false,
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerRef = useRef(null);
@@ -210,7 +219,7 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
 
   return (
     <div className="chart-container">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-water-100 rounded-lg">
             <MapPin className="w-5 h-5 text-water-600" />
@@ -219,7 +228,7 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
         </div>
 
         {/* Botões de métrica (substituindo dropdown) */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {Object.entries(metricConfig).map(([key, config]) => (
             <button
               key={key}
@@ -236,11 +245,57 @@ export default function MapChart({ data, geoData, metric = 'valor', onMunicipioC
         </div>
       </div>
 
-      <div
-        ref={mapRef}
-        className="h-[500px] rounded-xl overflow-hidden border border-earth-200"
-        style={{ background: '#f8fafc' }}
-      />
+      <div className="relative">
+        <div
+          ref={mapRef}
+          className="h-[500px] rounded-xl overflow-hidden border border-earth-200"
+          style={{ background: '#f8fafc' }}
+        />
+
+        {/* Estado de carregamento / erro do topojson, dentro da própria caixa
+            do mapa (antes: retângulo cinza mudo; erro derrubava o app todo). */}
+        {!geoData && (
+          <div className="absolute inset-0 z-[1100] flex flex-col items-center justify-center gap-3 rounded-xl bg-slate-50/95 text-center px-4">
+            {geoError ? (
+              <>
+                <p className="text-sm font-medium text-earth-700">
+                  Não foi possível carregar o mapa.
+                </p>
+                {onRetryGeo && (
+                  <button
+                    onClick={onRetryGeo}
+                    className="px-4 py-2 bg-water-600 text-white rounded-lg text-sm font-medium hover:bg-water-700 transition-colors"
+                  >
+                    Tentar novamente
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span
+                  className="w-8 h-8 border-2 border-water-600 border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                />
+                <p className="text-sm text-earth-600" role="status">Carregando mapa...</p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Mapa pronto, mas o recorte municipal (detailed.json) ainda baixando */}
+        {geoData && isDetailedLoading && !data?.byMunicipio?.length && (
+          <div
+            className="absolute top-3 left-1/2 -translate-x-1/2 z-[1100] flex items-center gap-2 px-3 py-1.5 bg-white/95 rounded-lg shadow text-xs text-earth-700"
+            role="status"
+          >
+            <span
+              className="w-3.5 h-3.5 border-2 border-water-600 border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
+            Carregando dados municipais (~80 MB)...
+          </div>
+        )}
+      </div>
 
       {/* Legend */}
       <div className="mt-4 flex items-center justify-center gap-4">

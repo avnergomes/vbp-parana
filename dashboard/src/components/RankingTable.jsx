@@ -11,6 +11,7 @@ export default function RankingTable({
   selectedProduto,
   selectedCadeia,
   selectedMunicipio,
+  isLoading = false,
 }) {
   const [sortField, setSortField] = useState('valor');
   const [sortDir, setSortDir] = useState('desc');
@@ -232,7 +233,17 @@ export default function RankingTable({
 
       {items.length === 0 && (
         <div className="py-12 text-center text-earth-500">
-          Nenhum resultado encontrado
+          {isLoading ? (
+            <span className="inline-flex items-center gap-2" role="status">
+              <span
+                className="w-4 h-4 border-2 border-earth-400 border-t-transparent rounded-full animate-spin"
+                aria-hidden="true"
+              />
+              Carregando dados municipais (~80 MB)...
+            </span>
+          ) : (
+            'Nenhum resultado encontrado'
+          )}
         </div>
       )}
 
