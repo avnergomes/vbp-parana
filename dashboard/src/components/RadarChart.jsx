@@ -79,7 +79,7 @@ export default function RadarChart({
                 className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
                 aria-hidden="true"
               />
-              <span>Carregando dados municipais (~80 MB)...</span>
+              <span>Carregando dados municipais...</span>
             </>
           ) : onLoadRequest ? (
             <>

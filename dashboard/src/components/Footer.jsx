@@ -1,7 +1,26 @@
+import { useState, useEffect } from 'react';
 import { Database, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [dataAtualizacao, setDataAtualizacao] = useState(null);
+
+  // Data de geração dos dados (data/meta.json). Falha silenciosa: se o arquivo
+  // não existir ou a data for inválida, o rótulo simplesmente não aparece.
+  useEffect(() => {
+    let active = true;
+    fetch(`${import.meta.env.BASE_URL}data/meta.json`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(meta => {
+        if (!active || !meta?.generatedAt) return;
+        const d = new Date(meta.generatedAt);
+        if (!Number.isNaN(d.getTime())) {
+          setDataAtualizacao(d.toLocaleDateString('pt-BR'));
+        }
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   return (
     <footer className="mt-12 border-t border-accent-200 bg-gradient-to-b from-neutral-50 to-accent-100">
@@ -128,8 +147,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-6 pt-4 border-t border-accent-200 flex items-center justify-between text-[10px] text-dark-400">
+        <div className="mt-6 pt-4 border-t border-accent-200 flex flex-wrap items-center justify-between gap-2 text-[10px] text-dark-400">
           <p>&copy; {currentYear} VBP Paraná. Dados públicos.</p>
+          {dataAtualizacao && (
+            <p>Dados atualizados em {dataAtualizacao}</p>
+          )}
           <div className="flex gap-2">
             <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">13 anos</span>
             <span className="px-2 py-0.5 bg-accent-100 text-accent-700 rounded-full">399 municípios</span>

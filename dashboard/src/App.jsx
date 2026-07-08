@@ -73,10 +73,12 @@ export default function App() {
     geoMap,
     loading,
     isDetailedLoading,
+    isMunicipioLoading,
     error,
     detailedError,
     geoError,
-    loadDetailedData,
+    loadDetailedRegional,
+    loadDetailedMunicipio,
     loadGeoData,
   } = useData();
 
@@ -190,11 +192,10 @@ export default function App() {
     }
   }, [aggregated?.metadata]);
 
-  // detailed.json (~80 MB) é carregado sob demanda: quando o primeiro
-  // filtro é aplicado ou ao abrir as abas Mapa e Regionais (que usam o
-  // recorte municipal). Antes era baixado e parseado em todo page load,
-  // bloqueando os visuais.
-  const needsDetailed = useMemo(() => {
+  // Cubo REGIONAL (~8 MB) sob demanda: qualquer filtro OU abas Mapa/Regionais.
+  // Cobre todos os visuais exceto o recorte municipal por produto. Antes o
+  // detailed.json inteiro (83 MB) era baixado nesse mesmo gatilho.
+  const needsDetailedRegional = useMemo(() => {
     const meta = aggregated?.metadata;
     if (!meta) return false;
     if (activeTab === 'mapa' || activeTab === 'regionais') return true;
@@ -206,13 +207,49 @@ export default function App() {
     return hasYearFilter || hasListFilter;
   }, [aggregated?.metadata, mergedFilters, activeTab]);
 
+  // Anos do range mesclado (clique interativo em ano = 1 fatia; range = N).
+  const municipioYears = useMemo(() => {
+    const meta = aggregated?.metadata;
+    if (!meta) return [];
+    const [anoMin, anoMax] = mergedFilters.anos || [];
+    const lo = anoMin ?? meta.anoMin;
+    const hi = anoMax ?? meta.anoMax;
+    const years = [];
+    for (let y = lo; y <= hi; y++) years.push(y);
+    return years;
+  }, [aggregated?.metadata, mergedFilters.anos]);
+
+  // Fatias MUNICIPAIS (~6 MB/ano) sob demanda: só quando há filtro de município
+  // OU de cadeia/subcadeia/produto (esses alimentam o byMunicipio de mapa,
+  // radar Top 5 e ranking municipal). Sem esses filtros, o byMunicipio vem do
+  // fallback agregado (instantâneo).
+  const needsDetailedMunicipio = useMemo(() => {
+    const hasMun = (mergedFilters.municipios || []).length > 0;
+    const hasProduto = ['cadeias', 'subcadeias', 'produtos']
+      .some(key => (mergedFilters[key] || []).length > 0);
+    return hasMun || hasProduto;
+  }, [mergedFilters]);
+
   useEffect(() => {
     // !detailedError evita loop de retentativas automáticas em caso de falha;
-    // o usuário decide tentar de novo pelo botão do aviso.
-    if (aggregated && !detailed && needsDetailed && !detailedError) {
-      loadDetailedData();
+    // o usuário decide tentar de novo pelo botão do aviso. Os loaders têm
+    // guardas internas (não recarregam o que já chegou).
+    if (aggregated && needsDetailedRegional && !detailedError) {
+      loadDetailedRegional();
     }
-  }, [aggregated, detailed, needsDetailed, detailedError, loadDetailedData]);
+  }, [aggregated, needsDetailedRegional, detailedError, loadDetailedRegional]);
+
+  useEffect(() => {
+    if (aggregated && needsDetailedMunicipio && municipioYears.length > 0 && !detailedError) {
+      loadDetailedMunicipio(municipioYears);
+    }
+  }, [aggregated, needsDetailedMunicipio, municipioYears, detailedError, loadDetailedMunicipio]);
+
+  // Retry manual: dispara o(s) carregamento(s) que o estado atual exige.
+  const handleRetryDetailed = useCallback(() => {
+    if (needsDetailedRegional) loadDetailedRegional();
+    if (needsDetailedMunicipio && municipioYears.length > 0) loadDetailedMunicipio(municipioYears);
+  }, [needsDetailedRegional, needsDetailedMunicipio, municipioYears, loadDetailedRegional, loadDetailedMunicipio]);
 
   // Lazy load geo data when map tab is activated
   useEffect(() => {
@@ -269,10 +306,10 @@ export default function App() {
           onClearAll={handleClearAllFilters}
         />
 
-        {/* Aviso do carregamento sob demanda do detailed.json (~80 MB):
-            sem ele, os visuais continuam mostrando os totais estaduais
-            sem filtro e o usuário acha que o filtro quebrou. */}
-        {needsDetailed && !detailed && isDetailedLoading && (
+        {/* Aviso do carregamento sob demanda dos cubos: sem eles, os visuais
+            continuam mostrando os totais estaduais sem filtro e o usuário acha
+            que o filtro quebrou. Regional (~8 MB) e fatias municipais (~6 MB/ano). */}
+        {isDetailedLoading && (
           <div
             className="flex flex-wrap items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-300 text-sm text-amber-900"
             role="status"
@@ -281,20 +318,34 @@ export default function App() {
               className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin flex-shrink-0"
               aria-hidden="true"
             />
-            <span className="font-medium">Carregando dados detalhados (~80 MB)...</span>
+            <span className="font-medium">Carregando dados detalhados (~8 MB)...</span>
             <span className="text-amber-800">
               Enquanto isso, os visuais abaixo mostram os totais do Paraná, sem os filtros aplicados.
             </span>
           </div>
         )}
-        {needsDetailed && !detailed && !isDetailedLoading && detailedError && (
+        {isMunicipioLoading && (
+          <div
+            className="flex flex-wrap items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-300 text-sm text-amber-900"
+            role="status"
+          >
+            <span
+              className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin flex-shrink-0"
+              aria-hidden="true"
+            />
+            <span className="font-medium">
+              Carregando recorte municipal ({municipioYears.length} {municipioYears.length === 1 ? 'ano' : 'anos'}, ~6 MB/ano)...
+            </span>
+          </div>
+        )}
+        {!isDetailedLoading && !isMunicipioLoading && detailedError && (
           <div
             className="flex flex-wrap items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-300 text-sm text-red-900"
             role="alert"
           >
             <span className="font-medium">Erro ao carregar os dados detalhados.</span>
             <button
-              onClick={loadDetailedData}
+              onClick={handleRetryDetailed}
               className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
             >
               Tentar novamente
@@ -347,8 +398,7 @@ export default function App() {
                   title="Comparação dos Top 5 Municípios"
                   width={450}
                   height={400}
-                  isLoading={isDetailedLoading}
-                  onLoadRequest={!detailed ? loadDetailedData : undefined}
+                  isLoading={isMunicipioLoading}
                 />
                 <RadarChart
                   data={filteredData?.byRegional}
@@ -398,7 +448,7 @@ export default function App() {
                 type="municipios"
                 onMunicipioClick={handleMunicipioClick}
                 selectedMunicipio={interactiveFilters.municipio}
-                isLoading={!detailed && !detailedError}
+                isLoading={isMunicipioLoading}
               />
             </>
           )}

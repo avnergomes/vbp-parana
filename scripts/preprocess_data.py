@@ -19,6 +19,7 @@ garantindo valores consistentes nos agregados e visualizações.
 import json
 import re
 import unicodedata
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
 import pandas as pd
@@ -458,6 +459,7 @@ def generate_aggregated_data(data: pd.DataFrame) -> Dict[str, Any]:
 
     return {
         "metadata": {
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
             "anos": anos,
             "totalAnos": len(anos),
             "anoMin": min(anos),
@@ -721,6 +723,14 @@ def main():
         json.dump(aggregated, f, ensure_ascii=False)
     print(f"   Salvo: aggregated.json")
 
+    # meta.json: data de geração (consumida pelo Footer do dashboard).
+    generated_at = aggregated["metadata"].get(
+        "generatedAt", datetime.now(timezone.utc).isoformat()
+    )
+    with open(OUTPUT_DIR / "meta.json", "w", encoding="utf-8") as f:
+        json.dump({"generatedAt": generated_at}, f, ensure_ascii=False)
+    print(f"   Salvo: meta.json")
+
     # Gerar dados detalhados
     print("\n3. Gerando dados detalhados...")
     detailed = generate_detailed_data(data)
@@ -728,6 +738,18 @@ def main():
     with open(OUTPUT_DIR / "detailed.json", "w", encoding="utf-8") as f:
         json.dump(detailed, f, ensure_ascii=False)
     print(f"   Salvo: detailed.json")
+
+    # Fatiar o detailed.json em regional + fatias municipais por ano, mantendo
+    # o CI sincronizado (o frontend consome as fatias; detailed.json fica como
+    # fallback do release). A verificação de integridade aborta se divergir.
+    print("\n3b. Fatiando detailed.json (regional + fatias municipais)...")
+    from split_detailed import split_detailed
+    ok, _ = split_detailed(
+        detailed, OUTPUT_DIR,
+        aggregated["metadata"].get("valorTotal"), verbose=True,
+    )
+    if not ok:
+        raise SystemExit("Integridade do fatiamento falhou; abortando.")
 
     # Gerar mapas de filtros
     print("\n4. Gerando mapas de filtros...")

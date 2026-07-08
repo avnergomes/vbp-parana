@@ -1,8 +1,31 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { feature } from 'topojson-client';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/vbp-parana/';
-const TOPO_URL = 'https://cdn.jsdelivr.net/gh/datageoparana/datageoparana.github.io@main/assets/parana-municipalities.topojson';
+// Malha municipal reduzida self-hosted (749 KB) como fonte primaria, com
+// fallback para o TopoJSON completo do hub via jsDelivr (4,4 MB). Ambos com
+// as MESMAS propriedades e a mesma object key ('municipalities').
+const TOPO_URL = 'https://datageoparana.github.io/assets/parana-municipalities.min.topojson';
+const TOPO_URL_FALLBACK = 'https://cdn.jsdelivr.net/gh/datageoparana/datageoparana.github.io@main/assets/parana-municipalities.topojson';
+
+/**
+ * Busca o TopoJSON municipal: tenta o self-hosted reduzido primeiro (checando
+ * res.ok) e, em qualquer falha (rede ou resposta nao-ok), cai para o TopoJSON
+ * completo do hub antes de propagar o erro. Preserva AbortError (cancelamento
+ * nao deve disparar o fallback).
+ */
+async function fetchTopo(signal) {
+  try {
+    const res = await fetch(TOPO_URL, { signal });
+    if (res.ok) return res;
+    throw new Error('topo-primary-not-ok');
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    const resFb = await fetch(TOPO_URL_FALLBACK, { signal });
+    if (!resFb.ok) throw new Error('Erro ao carregar dados geográficos');
+    return resFb;
+  }
+}
 
 /**
  * Hook para carregar e gerenciar os dados do dashboard
@@ -15,13 +38,22 @@ export function useData() {
   const [produtoMap, setProdutoMap] = useState(null);
   const [geoMap, setGeoMap] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isDetailedLoading, setIsDetailedLoading] = useState(false);
+  const [isDetailedLoading, setIsDetailedLoading] = useState(false); // regional
+  const [isMunicipioLoading, setIsMunicipioLoading] = useState(false); // fatias
   const [isGeoLoading, setIsGeoLoading] = useState(false);
   const [error, setError] = useState(null);
   // Erros dos carregamentos sob demanda ficam locais (não derrubam o app
   // inteiro como o erro do carregamento inicial).
   const [detailedError, setDetailedError] = useState(null);
   const [geoError, setGeoError] = useState(null);
+
+  // Refs sincronos para os guards dos loaders compostos (evitam corrida:
+  // detailedRef espelha o estado; munYearsRef reserva os anos em voo para
+  // nao baixar/concatenar a mesma fatia duas vezes).
+  const detailedRef = useRef(null);
+  const munYearsRef = useRef(new Set());
+  const munCompleteRef = useRef(false);
+  useEffect(() => { detailedRef.current = detailed; }, [detailed]);
 
   // Carregar dados essenciais na inicialização (aggregated, produto_map, geo_map)
   useEffect(() => {
@@ -69,19 +101,53 @@ export function useData() {
     return () => controller.abort();
   }, []);
 
-  // Função para carregar detailed.json sob demanda (80MB)
-  const loadDetailedData = useCallback(async () => {
-    if (detailed || isDetailedLoading) return;
+  // Carrega o cubo REGIONAL sob demanda (~8 MB): mapData + byAnoProdutoRegional.
+  // Cobre todos os filtros exceto o recorte municipal por produto. Fallback
+  // defensivo para detailed.json completo (83 MB) se a fatia regional faltar
+  // (ex.: release antigo em cache).
+  const loadDetailedRegional = useCallback(async () => {
+    if (detailedRef.current?.regionalLoaded || isDetailedLoading) return;
 
     const controller = new AbortController();
     try {
       setIsDetailedLoading(true);
       setDetailedError(null);
-      const res = await fetch(`${BASE_PATH}data/detailed.json`, { signal: controller.signal });
-      if (!res.ok) throw new Error('Erro ao carregar dados detalhados');
-      const data = await res.json();
+
+      let mapData, byAnoProdutoRegional, fullMunicipio = null;
+      const res = await fetch(`${BASE_PATH}data/detailed_regional.json`, { signal: controller.signal });
+      if (res.ok) {
+        const data = await res.json();
+        mapData = data.mapData || [];
+        byAnoProdutoRegional = data.byAnoProdutoRegional || [];
+      } else {
+        // Fallback: detailed.json completo (traz tambem o cubo municipal).
+        const full = await fetch(`${BASE_PATH}data/detailed.json`, { signal: controller.signal });
+        if (!full.ok) throw new Error('Erro ao carregar dados detalhados');
+        const data = await full.json();
+        mapData = data.mapData || [];
+        byAnoProdutoRegional = data.byAnoProdutoRegional || [];
+        fullMunicipio = data.byAnoProdutoMunicipio || [];
+      }
+
       if (!controller.signal.aborted) {
-        setDetailed(data);
+        if (fullMunicipio) { munCompleteRef.current = true; }
+        setDetailed(prev => {
+          const base = prev || {
+            regionalLoaded: false, mapData: [], byAnoProdutoRegional: [],
+            byAnoProdutoMunicipio: [], munYears: [], munComplete: false,
+          };
+          return {
+            ...base,
+            regionalLoaded: true,
+            mapData,
+            byAnoProdutoRegional,
+            // Se o fallback completo trouxe o municipal, ele domina; senao
+            // preserva as fatias que ja tenham chegado.
+            byAnoProdutoMunicipio: fullMunicipio || base.byAnoProdutoMunicipio,
+            munYears: fullMunicipio ? [] : base.munYears,
+            munComplete: fullMunicipio ? true : base.munComplete,
+          };
+        });
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -92,7 +158,83 @@ export function useData() {
         setIsDetailedLoading(false);
       }
     }
-  }, [detailed, isDetailedLoading]);
+  }, [isDetailedLoading]);
+
+  // Carrega as FATIAS municipais por ano sob demanda (~6 MB/ano):
+  // detailed_municipio_<ano>.json. So baixa os anos que faltam (Set em ref),
+  // concatena no cubo existente. Fallback defensivo para detailed.json completo
+  // se uma fatia faltar.
+  const loadDetailedMunicipio = useCallback(async (yearsWanted) => {
+    if (munCompleteRef.current) return;
+    const wanted = Array.isArray(yearsWanted) ? yearsWanted : [yearsWanted];
+    const missing = wanted.filter(y => y != null && !munYearsRef.current.has(y));
+    if (missing.length === 0) return;
+
+    // Reserva os anos sincronamente para evitar baixar a mesma fatia 2x.
+    missing.forEach(y => munYearsRef.current.add(y));
+
+    const controller = new AbortController();
+    try {
+      setIsMunicipioLoading(true);
+      setDetailedError(null);
+
+      const results = await Promise.all(missing.map(async (y) => {
+        const res = await fetch(`${BASE_PATH}data/detailed_municipio_${y}.json`, { signal: controller.signal });
+        if (res.ok) return { y, rows: await res.json() };
+        // Fallback: fatia ausente -> detailed.json completo.
+        const full = await fetch(`${BASE_PATH}data/detailed.json`, { signal: controller.signal });
+        if (!full.ok) throw new Error('Erro ao carregar dados municipais');
+        return { full: await full.json() };
+      }));
+
+      if (controller.signal.aborted) return;
+
+      const fullFallback = results.find(r => r.full);
+      if (fullFallback) {
+        munCompleteRef.current = true;
+        const data = fullFallback.full;
+        setDetailed(prev => {
+          const base = prev || {
+            regionalLoaded: false, mapData: [], byAnoProdutoRegional: [],
+            byAnoProdutoMunicipio: [], munYears: [], munComplete: false,
+          };
+          return {
+            ...base,
+            regionalLoaded: base.regionalLoaded || (data.byAnoProdutoRegional || []).length > 0,
+            mapData: base.mapData.length ? base.mapData : (data.mapData || []),
+            byAnoProdutoRegional: base.byAnoProdutoRegional.length ? base.byAnoProdutoRegional : (data.byAnoProdutoRegional || []),
+            byAnoProdutoMunicipio: data.byAnoProdutoMunicipio || [],
+            munYears: [],
+            munComplete: true,
+          };
+        });
+      } else {
+        const newRows = results.flatMap(r => r.rows);
+        const loadedYears = results.map(r => r.y);
+        setDetailed(prev => {
+          const base = prev || {
+            regionalLoaded: false, mapData: [], byAnoProdutoRegional: [],
+            byAnoProdutoMunicipio: [], munYears: [], munComplete: false,
+          };
+          return {
+            ...base,
+            byAnoProdutoMunicipio: base.byAnoProdutoMunicipio.concat(newRows),
+            munYears: Array.from(new Set([...(base.munYears || []), ...loadedYears])),
+          };
+        });
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setDetailedError(err.message);
+        // Libera os anos reservados para permitir retry.
+        missing.forEach(y => munYearsRef.current.delete(y));
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsMunicipioLoading(false);
+      }
+    }
+  }, []);
 
   // Função para carregar municipios.geojson sob demanda (48MB)
   const loadGeoData = useCallback(async () => {
@@ -102,8 +244,8 @@ export function useData() {
     try {
       setIsGeoLoading(true);
       setGeoError(null);
-      const res = await fetch(TOPO_URL, { signal: controller.signal });
-      if (!res.ok) throw new Error('Erro ao carregar dados geográficos');
+      // fetchTopo tenta o self-hosted reduzido e cai no CDN do hub em falha.
+      const res = await fetchTopo(controller.signal);
       const topo = await res.json();
       const data = feature(topo, topo.objects.municipalities);
       if (!controller.signal.aborted) {
@@ -128,11 +270,13 @@ export function useData() {
     geoMap,
     loading,
     isDetailedLoading,
+    isMunicipioLoading,
     isGeoLoading,
     error,
     detailedError,
     geoError,
-    loadDetailedData,
+    loadDetailedRegional,
+    loadDetailedMunicipio,
     loadGeoData,
   };
 }
@@ -157,9 +301,25 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     const hasProdutoFilter = produtos.length > 0;
     const hasProdutoFilterAny = hasCadeiaFilter || hasSubcadeiaFilter || hasProdutoFilter;
     const hasAnyFilter = hasYearFilter || hasGeoFilter || hasProdutoFilterAny;
-    // detailed.json (80 MB) é carregado sob demanda; enquanto não chega,
-    // todos os blocos abaixo caem nos agregados (visão sem filtro).
-    const useDetailed = !!detailed;
+    // Cubos carregados sob demanda em fatias; enquanto não chegam, os blocos
+    // abaixo caem nos agregados (visão sem filtro).
+    // - regionalReady: mapData + byAnoProdutoRegional disponíveis (~8 MB).
+    // - municipioReady: TODAS as fatias municipais do range [anoMin..anoMax]
+    //   carregadas (ou o detailed.json completo via fallback).
+    const regionalReady = !!detailed && detailed.regionalLoaded;
+    let municipioReady = false;
+    if (detailed) {
+      if (detailed.munComplete) {
+        municipioReady = true;
+      } else {
+        const loadedYears = new Set(detailed.munYears || []);
+        municipioReady = true;
+        for (let y = anoMin; y <= anoMax; y++) {
+          if (!loadedYears.has(y)) { municipioReady = false; break; }
+        }
+      }
+    }
+    const useDetailed = regionalReady;
 
     // Calcular regionais alvo
     const regionaisFromMesos = mesos.length > 0 && geoMap
@@ -211,8 +371,9 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     // Caso contrário, usar byAnoProdutoRegional
     let filteredCrossData = [];
 
-    if (useDetailed && municipios.length > 0 && detailed.byAnoProdutoMunicipio) {
-      // Usar dataset de município quando há filtro de município
+    if (municipioReady && municipios.length > 0) {
+      // Usar dataset de município quando há filtro de município (todas as
+      // fatias do range já carregadas)
       filteredCrossData = detailed.byAnoProdutoMunicipio.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
         if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
@@ -248,7 +409,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       filteredCrossData = Object.values(regionalGroups);
     } else if (useDetailed) {
       // Usar dataset regional padrão
-      filteredCrossData = detailed.byAnoProdutoRegional.filter(item => {
+      filteredCrossData = (detailed.byAnoProdutoRegional || []).filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
         if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
         if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return false;
@@ -377,8 +538,9 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     // Caso contrário usa mapData (mais leve, sem dimensão de produto)
     const mapByMunicipio = {};
 
-    if (useDetailed && (hasProdutoFilterAny || municipios.length > 0) && detailed.byAnoProdutoMunicipio) {
-      // Filtrar dataset com granularidade município + produto
+    if (municipioReady && (hasProdutoFilterAny || municipios.length > 0)) {
+      // Filtrar dataset com granularidade município + produto (fatias do range
+      // já carregadas)
       const filteredMapData = detailed.byAnoProdutoMunicipio.filter(item => {
         if (item.a < anoMin || item.a > anoMax) return false;
         if (hasCadeiaFilter && !cadeias.includes(item.c)) return false;
@@ -481,6 +643,23 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       topProdutosAno = aggregated.topProdutosAno;
     }
 
+    // Fallback leve por município: quando o cubo municipal ainda não chegou
+    // (ou nem foi disparado) e não há filtro ativo, usar aggregated.byMunicipio
+    // (~75 KB já baixados no load inicial) remapeado para a convenção dos
+    // consumidores (cod/nome/regional). Assim RadarChart "Top 5 Municípios" e
+    // RankingTable municípios abrem instantaneamente na visão sem filtro.
+    let byMunicipioOut = Object.values(mapByMunicipio);
+    if (byMunicipioOut.length === 0 && !hasAnyFilter && aggregated.byMunicipio) {
+      byMunicipioOut = aggregated.byMunicipio.map(m => ({
+        cod: m.cod_ibge,
+        nome: m.municipio_oficial,
+        regional: m.regional_idr,
+        valor: m.valor,
+        producao: m.producao,
+        area: m.area,
+      }));
+    }
+
     return {
       timeSeries,
       totals,
@@ -488,7 +667,7 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       bySubcadeia,
       byProduto,
       byRegional,
-      byMunicipio: Object.values(mapByMunicipio),
+      byMunicipio: byMunicipioOut,
       byMeso,
       evolutionCadeia,
       topProdutosAno,

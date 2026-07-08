@@ -1264,6 +1264,9 @@ window.__I18N_TEXT_MAP__ = (function () {
     // ── banner de convite ao hub (substituiu o referer gate) ─────────
     ["Este painel faz parte do ecossistema Datageo Paraná.", "This dashboard is part of the Datageo Paraná ecosystem.", "Este panel forma parte del ecosistema Datageo Paraná."],
     ["Conhecer o hub", "Visit the hub", "Conocer el hub"],
+
+    // ── rodapé: data de atualização dos dados ────────────────────────
+    ["Dados atualizados em", "Data updated on", "Datos actualizados el"],
   ];
 
   var en = {}, es = {};

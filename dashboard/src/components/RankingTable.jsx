@@ -239,7 +239,7 @@ export default function RankingTable({
                 className="w-4 h-4 border-2 border-earth-400 border-t-transparent rounded-full animate-spin"
                 aria-hidden="true"
               />
-              Carregando dados municipais (~80 MB)...
+              Carregando dados municipais...
             </span>
           ) : (
             'Nenhum resultado encontrado'
