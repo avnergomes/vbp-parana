@@ -72,7 +72,7 @@
   }
 
   .filter-select {
-    @apply w-full px-4 py-2.5 bg-white border border-neutral-900/25 text-sm
+    @apply w-full px-4 py-2.5 bg-white border border-neutral-900/25 text-base
            focus:ring-2 focus:ring-accent-600/30 focus:border-accent-600
            transition-colors duration-200 appearance-none cursor-pointer
            hover:border-neutral-900/55;
@@ -82,6 +82,7 @@
     background-size: 1.1rem;
     padding-right: 2.5rem;
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    min-height: 44px;
   }
 
   .filter-label {

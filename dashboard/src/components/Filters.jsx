@@ -409,7 +409,7 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar..."
-                className="w-full px-3 py-2 text-sm border border-earth-200 rounded-lg focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500"
+                className="w-full px-3 py-2 text-base border border-earth-200 rounded-lg focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 min-h-[44px]"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

@@ -83,7 +83,7 @@ export default function MapChart({
         center: [-24.7, -51.5],
         zoom: 7,
         zoomControl: true,
-        scrollWheelZoom: true,
+        scrollWheelZoom: false,
       });
 
       // Add tile layer
@@ -248,7 +248,7 @@ export default function MapChart({
       <div className="relative">
         <div
           ref={mapRef}
-          className="h-[500px] rounded-xl overflow-hidden border border-earth-200"
+          className="h-[55vh] min-h-[240px] max-h-[480px] rounded-xl overflow-hidden border border-earth-200"
           style={{ background: '#f8fafc' }}
         />
 

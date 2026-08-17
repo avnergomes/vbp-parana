@@ -108,7 +108,7 @@ export default function RankingTable({
 
   return (
     <div className="chart-container overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-y-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-harvest-100 rounded-lg">
             <Trophy className="w-5 h-5 text-harvest-600" />
@@ -126,7 +126,7 @@ export default function RankingTable({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar..."
-              className="pl-9 pr-4 py-2 text-sm border border-earth-200 rounded-xl focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500"
+              className="pl-9 pr-4 py-2 text-base border border-earth-200 rounded-xl focus:ring-2 focus:ring-forest-500/20 focus:border-forest-500 min-h-[44px]"
             />
           </div>
           <select

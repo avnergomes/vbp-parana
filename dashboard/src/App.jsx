@@ -382,30 +382,36 @@ export default function App() {
               </div>
 
               {/* Advanced D3 Charts */}
-              <SunburstChart
-                data={filteredData}
-                title="Hierarquia de Valor: Cadeia > Subcadeia > Produto"
-                width={650}
-                height={550}
-                onCadeiaClick={handleCadeiaClick}
-                onSubcadeiaClick={handleSubcadeiaClick}
-                onProdutoClick={handleProdutoClick}
-              />
+              <div className="overflow-x-auto">
+                <SunburstChart
+                  data={filteredData}
+                  title="Hierarquia de Valor: Cadeia > Subcadeia > Produto"
+                  width={650}
+                  height={550}
+                  onCadeiaClick={handleCadeiaClick}
+                  onSubcadeiaClick={handleSubcadeiaClick}
+                  onProdutoClick={handleProdutoClick}
+                />
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RadarChart
-                  data={filteredData?.byMunicipio}
-                  title="Comparação dos Top 5 Municípios"
-                  width={450}
-                  height={400}
-                  isLoading={isMunicipioLoading}
-                />
-                <RadarChart
-                  data={filteredData?.byRegional}
-                  title="Comparacao das Top 5 Regionais"
-                  width={450}
-                  height={400}
-                />
+                <div className="overflow-x-auto">
+                  <RadarChart
+                    data={filteredData?.byMunicipio}
+                    title="Comparação dos Top 5 Municípios"
+                    width={450}
+                    height={400}
+                    isLoading={isMunicipioLoading}
+                  />
+                </div>
+                <div className="overflow-x-auto">
+                  <RadarChart
+                    data={filteredData?.byRegional}
+                    title="Comparacao das Top 5 Regionais"
+                    width={450}
+                    height={400}
+                  />
+                </div>
               </div>
             </>
           )}
