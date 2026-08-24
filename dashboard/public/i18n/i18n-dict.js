@@ -61,7 +61,7 @@ window.__I18N__ = {
       open: "Abrir placa",
       vbp: {
         title: "VBP Paraná, valor bruto da produção agropecuária.",
-        desc: "Valor Bruto da Produção Agropecuária de 2012 a 2024, com 399 municípios e mais de 200 produtos em 25 cadeias produtivas.",
+        desc: "Valor Bruto da Produção Agropecuária de 2012 a 2025, com 399 municípios e mais de 200 produtos em 25 cadeias produtivas.",
       },
       diarios: {
         title: "Preços diários, cotações desde 2003.",
@@ -225,7 +225,7 @@ window.__I18N__ = {
       open: "Open plate",
       vbp: {
         title: "VBP Paraná — Gross Production Value of agribusiness.",
-        desc: "Gross Production Value of agribusiness from 2012 to 2024, covering 399 municipalities and 200+ products across 25 productive chains.",
+        desc: "Gross Production Value of agribusiness from 2012 to 2025, covering 399 municipalities and 200+ products across 25 productive chains.",
       },
       diarios: {
         title: "Daily prices — quotes since 2003.",
@@ -389,7 +389,7 @@ window.__I18N__ = {
       open: "Abrir placa",
       vbp: {
         title: "VBP Paraná — Valor Bruto de la Producción agropecuaria.",
-        desc: "Valor Bruto de la Producción Agropecuaria de 2012 a 2024, con 399 municipios y más de 200 productos en 25 cadenas productivas.",
+        desc: "Valor Bruto de la Producción Agropecuaria de 2012 a 2025, con 399 municipios y más de 200 productos en 25 cadenas productivas.",
       },
       diarios: {
         title: "Precios diarios — cotizaciones desde 2003.",

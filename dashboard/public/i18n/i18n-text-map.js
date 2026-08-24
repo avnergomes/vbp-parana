@@ -113,9 +113,9 @@ window.__I18N_TEXT_MAP__ = (function () {
       "Seguridad Paraná — indicadores SESP-PR."],
 
     // ── plate descriptions ────────────────────────────────────────────
-    ["Valor Bruto da Produção Agropecuária de 2012 a 2024, com 399 municípios e mais de 200 produtos em 25 cadeias produtivas.",
-      "Gross Production Value of agribusiness from 2012 to 2024, covering 399 municipalities and 200+ products across 25 productive chains.",
-      "Valor Bruto de la Producción Agropecuaria de 2012 a 2024, con 399 municipios y más de 200 productos en 25 cadenas productivas."],
+    ["Valor Bruto da Produção Agropecuária de 2012 a 2025, com 399 municípios e mais de 200 produtos em 25 cadeias produtivas.",
+      "Gross Production Value of agribusiness from 2012 to 2025, covering 399 municipalities and 200+ products across 25 productive chains.",
+      "Valor Bruto de la Producción Agropecuaria de 2012 a 2025, con 399 municipios y más de 200 productos en 25 cadenas productivas."],
     ["Cotações diárias com mais de 100 produtos em 23 regionais. Atualização automática e modelos de previsão de preços.",
       "Daily commodity quotes for 100+ products across 23 regional offices. Automatic updates and price forecasting models.",
       "Cotizaciones diarias con más de 100 productos en 23 regionales. Actualización automática y modelos de previsión de precios."],
@@ -205,9 +205,9 @@ window.__I18N_TEXT_MAP__ = (function () {
     ["Inteligência Territorial da Produção Agropecuária",
       "Territorial Intelligence on Agricultural Production",
       "Inteligencia Territorial de la Producción Agropecuaria"],
-    ["Explore dados do Valor Bruto da Produção do estado do Paraná (2012-2024).",
-      "Explore Gross Production Value data for Paraná state (2012–2024).",
-      "Explora datos del Valor Bruto de la Producción del estado de Paraná (2012–2024)."],
+    ["Explore dados do Valor Bruto da Produção do estado do Paraná (2012-2025).",
+      "Explore Gross Production Value data for Paraná state (2012–2025).",
+      "Explora datos del Valor Bruto de la Producción del estado de Paraná (2012–2025)."],
 
     // ── core nav / chrome ─────────────────────────────────────────────
     ["Filtros", "Filters", "Filtros"],
@@ -416,9 +416,9 @@ window.__I18N_TEXT_MAP__ = (function () {
     ["Explore dados do",
       "Explore data on",
       "Explora datos del"],
-    ["do estado do Paraná (2012-2024). Analise tendências por município, regional, cadeia produtiva e produto. Dados oficiais processados para inteligência territorial.",
-      "in Paraná state (2012–2024). Analyze trends by municipality, regional office, productive chain and product. Official data processed for territorial intelligence.",
-      "del estado de Paraná (2012–2024). Analiza tendencias por municipio, regional, cadena productiva y producto. Datos oficiales procesados para inteligencia territorial."],
+    ["do estado do Paraná (2012-2025). Analise tendências por município, regional, cadeia produtiva e produto. Dados oficiais processados para inteligência territorial.",
+      "in Paraná state (2012–2025). Analyze trends by municipality, regional office, productive chain and product. Official data processed for territorial intelligence.",
+      "del estado de Paraná (2012–2025). Analiza tendencias por municipio, regional, cadena productiva y producto. Datos oficiales procesados para inteligencia territorial."],
     ["Mesorregião", "Mesoregion", "Mesorregión"],
     ["Mesorregiões", "Mesoregions", "Mesorregiones"],
     ["Regional IDR", "IDR Regional", "Regional IDR"],

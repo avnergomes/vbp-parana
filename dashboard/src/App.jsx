@@ -84,7 +84,7 @@ export default function App() {
 
   // Dropdown filters state (kept for period and region hierarchy)
   const [filters, setFilters] = useState({
-    anos: [2012, 2024],
+    anos: [2012, 2025],
     mesos: [],
     regionais: [],
     municipios: [],

@@ -47,7 +47,7 @@ export default function Header() {
         {/* Description banner */}
         <div className="mt-4 md:mt-6 p-3 md:p-4 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
           <p className="text-neutral-50 text-xs md:text-sm leading-relaxed">
-            Explore dados do <strong>Valor Bruto da Produção</strong> do estado do Paraná (2012-2024).
+            Explore dados do <strong>Valor Bruto da Produção</strong> do estado do Paraná (2012-2025).
             Analise tendências por município, regional, cadeia produtiva e produto.
             Dados oficiais processados para inteligência territorial.
           </p>

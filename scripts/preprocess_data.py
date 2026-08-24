@@ -83,6 +83,7 @@ PRODUCT_ALIASES: Dict[str, str] = {
     normalize_text("Alho Porro"): normalize_text("Alho Poro"),
     normalize_text("Arroz de Sequeiro"): normalize_text("Arroz Sequeiro"),
     normalize_text("Brocolos"): normalize_text("Brócolis"),
+    normalize_text("Bicho da Seda Casulos"): normalize_text("Bicho da Seda Casulo"),
 }
 
 # Tabela de conversão de unidades para toneladas
@@ -91,6 +92,7 @@ UNIT_TO_TON_CONVERSION: Dict[str, float] = {
     "TON": 1.0,         # Tonelada → Tonelada (1:1)
     "T": 1.0,           # Tonelada → Tonelada (1:1)
     "KG": 0.001,        # Quilograma → Tonelada (1 kg = 0.001 ton)
+    "G": 0.000001,      # Grama → Tonelada (larvas de bicho-da-seda no VBP 2025)
     "L": 0.001,         # Litro → Tonelada (para leite: ~1 kg/L)
     "MIL L": 1.0,       # Mil litros → Tonelada (para leite: ~1000 kg = 1 ton)
     # Unidades sem conversão direta para massa:
@@ -102,6 +104,8 @@ UNIT_TO_TON_CONVERSION: Dict[str, float] = {
     "VSO": 0.0,         # Vaso (não converter)
     "MCO": 0.0,         # Maço (não converter)
     "CAB": 0.0,         # Cabaço (não converter)
+    "MIL": 0.0,         # Milheiro (alevinos, não converter)
+    "HA": 0.0,          # Hectare (pastagens/mata nativa, unidade de área)
 }
 
 
@@ -235,6 +239,10 @@ def process_vbp_file(path: Path, municipios: pd.DataFrame,
                      correction_map: Dict[str, str]) -> pd.DataFrame:
     """Processa um arquivo VBP individual."""
     raw = pd.read_excel(path)
+    # Releases 2025+ trazem uma linha de título acima do cabeçalho real
+    unnamed = sum(1 for col in raw.columns if str(col).startswith("Unnamed:"))
+    if unnamed > len(raw.columns) / 2:
+        raw = pd.read_excel(path, header=1)
     df = raw.copy()
     df.columns = [normalize_column(col) for col in df.columns]
     df = rename_columns(df)

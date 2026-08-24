@@ -1,6 +1,6 @@
 # VBP Paraná — Valor Bruto da Produção Agropecuária
 
-Dashboard interativo do Valor Bruto da Produção Agropecuária do Paraná, cobrindo o período de 2012 a 2024. Permite explorar a evolução do VBP por cadeia produtiva, regional IDR e município.
+Dashboard interativo do Valor Bruto da Produção Agropecuária do Paraná, cobrindo o período de 2012 a 2025. Permite explorar a evolução do VBP por cadeia produtiva, regional IDR e município.
 
 **🔗 [Acessar dashboard](https://avnergomes.github.io/vbp-parana/)**
 
@@ -10,14 +10,14 @@ Parte do ecossistema **[Datageo Paraná](https://datageoparana.github.io)**.
 
 O Valor Bruto da Produção Agropecuária (VBP) é um dos principais indicadores da agropecuária paranaense, estimando a receita bruta gerada por lavouras e pecuária no estado. Este dashboard transforma os dados tabulares da SEAB/IDR-Paraná em visualizações interativas, facilitando a análise temporal e espacial da produção agropecuária.
 
-A ferramenta permite filtrar por período (2012–2024), por cadeia produtiva e por regional IDR, exibindo KPIs de VBP total, produção e área cultivada. O mapa coroplético de municípios e os gráficos de ranking, sunburst e radar complementam a análise com diferentes perspectivas sobre os dados.
+A ferramenta permite filtrar por período (2012–2025), por cadeia produtiva e por regional IDR, exibindo KPIs de VBP total, produção e área cultivada. O mapa coroplético de municípios e os gráficos de ranking, sunburst e radar complementam a análise com diferentes perspectivas sobre os dados.
 
-Os dados brutos são fornecidos em arquivos Excel (VBP2012.xlsx a vbp2024.xlsx) e processados automaticamente por um pipeline Python antes de serem publicados no dashboard.
+Os dados brutos são fornecidos em arquivos Excel (VBP2012.xlsx a vbp2025.xlsx) e processados automaticamente por um pipeline Python antes de serem publicados no dashboard.
 
 ## Fonte de Dados
 
 - **SEAB/IDR-Paraná** — Secretaria da Agricultura e do Abastecimento do Paraná / Instituto de Desenvolvimento Rural do Paraná
-- Período: 2012–2024
+- Período: 2012–2025
 - Arquivos brutos: planilhas Excel anuais em `/data/`
 
 ## Tecnologias
@@ -45,7 +45,7 @@ vbp-parana/
 │   └── index.html
 ├── scripts/            # Pipeline de dados (Python)
 │   └── preprocess_data.py
-├── data/               # Dados brutos (Excel VBP2012–VBP2024)
+├── data/               # Dados brutos (Excel VBP2012–vbp2025)
 ├── .github/workflows/  # CI/CD
 │   ├── data-pipeline.yml
 │   └── deploy.yml
