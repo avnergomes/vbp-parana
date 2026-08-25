@@ -5,15 +5,14 @@ import { formatCurrency, formatNumber } from '../utils/format';
 /**
  * Ranking ANUAL de VBP por hectare (municípios ou regionais).
  *
- * Metodologia: VBP/ha = VBP total ÷ área total declarada NO ANO selecionado
- * (seletor local; padrão = ano mais recente do recorte). Somar áreas de vários
- * anos inflaria o denominador além do território real do município — por isso
- * o ranking é sempre de um único ano. Produtos sem área informada (ex.:
- * pecuária, leite, ovos) entram no valor, mas não na área; entidades sem área
- * declarada no ano ficam fora do ranking.
+ * Metodologia: VBP/ha = VBP do ano selecionado ÷ ÁREA TERRITORIAL TOTAL
+ * (base IBGE 2022; regionais = soma dos seus municípios). O denominador é o
+ * território, constante, e não a área cultivada declarada no VBP — a área
+ * declarada não cobre todos os produtos (pecuária etc. não informa área).
+ * Seletor de ano local; padrão = ano mais recente do recorte.
  *
- * Fonte: evolutionMunicipio / evolutionRegional (ano × entidade, já com todos
- * os filtros cruzados aplicados pelo useFilteredData).
+ * Fonte: evolutionMunicipio / evolutionRegional (ano × entidade com areaIbge,
+ * já com todos os filtros cruzados aplicados pelo useFilteredData).
  */
 export default function VbpHaRanking({
   data,
@@ -43,22 +42,19 @@ export default function VbpHaRanking({
   // cai no mais recente disponível.
   const effectiveAno = ano !== null && years.includes(ano) ? ano : years[0];
 
-  const { items, excluded } = useMemo(() => {
-    if (!source?.length || effectiveAno == null) return { items: [], excluded: 0 };
+  const items = useMemo(() => {
+    if (!source?.length || effectiveAno == null) return [];
 
-    const withRatio = source
+    const ranked = source
       .filter(item => item.ano === effectiveAno)
       .map(item => ({
         nome: isMunicipios ? item.nome : item.regional_idr,
         regional: isMunicipios ? item.regional : null,
         valor: item.valor,
-        area: item.area,
-        vbpHa: item.area > 0 ? item.valor / item.area : null,
+        areaIbge: item.areaIbge,
+        vbpHa: item.areaIbge > 0 ? item.valor / item.areaIbge : null,
       }))
-      .filter(item => item.nome);
-
-    const ranked = withRatio.filter(item => item.vbpHa !== null);
-    const excludedCount = withRatio.length - ranked.length;
+      .filter(item => item.nome && item.vbpHa !== null);
 
     let filtered = ranked;
     if (search) {
@@ -72,7 +68,7 @@ export default function VbpHaRanking({
       return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
     });
 
-    return { items: sorted.slice(0, limit), excluded: excludedCount };
+    return sorted.slice(0, limit);
   }, [source, effectiveAno, isMunicipios, search, sortField, sortDir, limit]);
 
   const handleSort = (field) => {
@@ -97,7 +93,7 @@ export default function VbpHaRanking({
     ...(isMunicipios ? [{ key: 'regional', label: 'Regional', sortable: false }] : []),
     { key: 'vbpHa', label: 'VBP/ha (R$)', sortable: true },
     { key: 'valor', label: 'Valor (R$)', sortable: true },
-    { key: 'area', label: 'Área (ha)', sortable: true },
+    { key: 'areaIbge', label: 'Área territorial (ha)', sortable: true },
   ];
 
   const handleRowClick = (item) => {
@@ -205,7 +201,7 @@ export default function VbpHaRanking({
                     {formatCurrency(item.valor)}
                   </td>
                   <td className="px-4 py-3 text-earth-600">
-                    {formatNumber(item.area)}
+                    {formatNumber(item.areaIbge)}
                   </td>
                 </tr>
               );
@@ -225,19 +221,13 @@ export default function VbpHaRanking({
               Carregando dados detalhados...
             </span>
           ) : (
-            'Sem área declarada no recorte atual. O VBP/ha não se aplica a produtos sem área informada (ex.: pecuária).'
+            'Sem dados para exibir'
           )}
         </div>
       )}
 
-      {excluded > 0 && items.length > 0 && (
-        <p className="text-xs text-earth-500 mt-2">
-          {excluded} {isMunicipios ? (excluded === 1 ? 'município' : 'municípios') : (excluded === 1 ? 'regional' : 'regionais')} sem área declarada no recorte (fora do ranking).
-        </p>
-      )}
-
       <p className="text-xs text-center text-neutral-500 mt-3">
-        VBP/ha = VBP total ÷ área total declarada no ano selecionado. Produtos sem área informada (ex.: pecuária) entram no valor, mas não na área. Clique em uma linha para filtrar.
+        VBP/ha = VBP do ano selecionado ÷ área territorial total do município (base IBGE), não a área cultivada. Clique em uma linha para filtrar.
       </p>
     </div>
   );

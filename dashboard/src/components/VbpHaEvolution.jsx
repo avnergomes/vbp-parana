@@ -10,10 +10,12 @@ const TOP_N = 8;
 /**
  * Evolução do VBP por hectare (linhas por regional ou por município).
  *
- * Cada linha é VBP total ÷ área total declarada da entidade naquele ano,
- * calculada sobre o recorte filtrado (cadeia/subcadeia/produto/geo/período).
- * Mostra as TOP_N entidades pelo VBP/ha acumulado do período; a entidade
- * selecionada via filtro interativo entra sempre, mesmo fora do top.
+ * Cada linha é VBP do ano ÷ ÁREA TERRITORIAL TOTAL da entidade (base IBGE
+ * 2022, campo areaIbge; regionais = soma dos seus municípios), sobre o
+ * recorte filtrado (cadeia/subcadeia/produto/geo/período). Não usa a área
+ * cultivada declarada no VBP. Mostra as TOP_N entidades pelo VBP/ha
+ * acumulado do período; a entidade selecionada via filtro interativo entra
+ * sempre, mesmo fora do top.
  */
 export default function VbpHaEvolution({
   data,
@@ -26,11 +28,22 @@ export default function VbpHaEvolution({
   const [view, setView] = useState('regionais');
   const isMunicipios = view === 'municipios';
 
+  // Resumo do recorte: VBP/ha do ANO MAIS RECENTE disponível (valor do ano ÷
+  // soma das áreas territoriais IBGE das entidades presentes). Não acumula
+  // valor de vários anos sobre o mesmo território.
   const summary = useMemo(() => {
-    if (!data?.totals) return null;
-    const { valor, area } = data.totals;
-    return area > 0 ? valor / area : null;
-  }, [data?.totals]);
+    const src = data?.evolutionMunicipio || data?.evolutionRegional;
+    if (!src?.length) return null;
+    const lastAno = Math.max(...src.map(item => item.ano));
+    let valor = 0;
+    let areaIbge = 0;
+    src.forEach(item => {
+      if (item.ano !== lastAno) return;
+      valor += item.valor;
+      areaIbge += item.areaIbge || 0;
+    });
+    return areaIbge > 0 ? { ano: lastAno, vbpHa: valor / areaIbge } : null;
+  }, [data?.evolutionMunicipio, data?.evolutionRegional]);
 
   const { chartData, entities } = useMemo(() => {
     const source = isMunicipios ? data?.evolutionMunicipio : data?.evolutionRegional;
@@ -38,18 +51,18 @@ export default function VbpHaEvolution({
 
     const nameOf = (item) => (isMunicipios ? item.nome : item.regional_idr);
 
-    // Ranquear entidades pelo VBP/ha acumulado do período (valor total ÷ área total).
+    // Ranquear entidades pelo VBP/ha acumulado do período (valor total ÷
+    // área territorial IBGE, constante — equivale a ranquear pela média anual).
     const totals = {};
     source.forEach(item => {
       const name = nameOf(item);
-      if (!totals[name]) totals[name] = { valor: 0, area: 0 };
+      if (!totals[name]) totals[name] = { valor: 0, areaIbge: item.areaIbge || 0 };
       totals[name].valor += item.valor;
-      totals[name].area += item.area;
     });
 
     const ranked = Object.entries(totals)
-      .filter(([, t]) => t.area > 0)
-      .map(([name, t]) => ({ name, vbpHa: t.valor / t.area }))
+      .filter(([, t]) => t.areaIbge > 0)
+      .map(([name, t]) => ({ name, vbpHa: t.valor / t.areaIbge }))
       .sort((a, b) => b.vbpHa - a.vbpHa);
 
     const selected = isMunicipios ? selectedMunicipio : selectedRegional;
@@ -63,9 +76,9 @@ export default function VbpHaEvolution({
     const byYear = {};
     source.forEach(item => {
       const name = nameOf(item);
-      if (!topSet.has(name) || item.area <= 0) return;
+      if (!topSet.has(name) || !(item.areaIbge > 0)) return;
       if (!byYear[item.ano]) byYear[item.ano] = { ano: item.ano };
-      byYear[item.ano][name] = Math.round(item.valor / item.area);
+      byYear[item.ano][name] = Math.round(item.valor / item.areaIbge);
     });
 
     return {
@@ -96,7 +109,7 @@ export default function VbpHaEvolution({
             <h3 className="section-title">Evolução do VBP por Hectare</h3>
             {summary !== null && (
               <p className="text-sm text-earth-500">
-                VBP/ha do recorte: <span className="font-semibold text-forest-700">{formatCurrency(summary)}/ha</span>
+                VBP/ha do recorte: <span className="font-semibold text-forest-700">{formatCurrency(summary.vbpHa)}/ha · {summary.ano}</span>
               </p>
             )}
           </div>
@@ -182,7 +195,7 @@ export default function VbpHaEvolution({
             </span>
           ) : (
             <span className="text-center px-6">
-              Sem área declarada no recorte atual. O VBP/ha não se aplica a produtos sem área informada (ex.: pecuária).
+              Sem dados para exibir
             </span>
           )}
         </div>
@@ -193,10 +206,13 @@ export default function VbpHaEvolution({
           {isMunicipios ? 'Município selecionado' : 'Regional selecionada'}: {selected}
         </p>
       )}
-      {/* Texto literal (sem interpolar TOP_N): o runtime i18n casa nós de
-          texto exatos e a interpolação dividiria o nó em três. */}
+      {/* Textos literais (sem interpolar TOP_N): o runtime i18n casa nós de
+          texto exatos e a interpolação dividiria o nó. */}
       <p className="text-xs text-center text-neutral-500 mt-1">
         Top 8 por VBP/ha acumulado no período. Clique na legenda para filtrar.
+      </p>
+      <p className="text-xs text-center text-neutral-500 mt-1">
+        VBP/ha calculado sobre a área territorial total (base IBGE), não sobre a área cultivada.
       </p>
     </div>
   );

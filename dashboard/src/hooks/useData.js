@@ -1,5 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { feature } from 'topojson-client';
+// Áreas territoriais oficiais (IBGE 2022, em ha) por cod_ibge — denominador
+// do VBP/ha (território total, não área cultivada). Gerado por
+// scripts/fetch_areas_ibge.py.
+import MUNICIPIO_AREAS_IBGE from '../data/municipio_areas_ibge.json';
 
 const BASE_PATH = import.meta.env.BASE_URL || '/vbp-parana/';
 // Malha municipal reduzida self-hosted (749 KB) como fonte primaria, com
@@ -644,18 +648,36 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
     }
 
     // === EVOLUÇÃO VBP/ha (ano × regional e ano × município) ===
-    // Base da aba VBP/ha: valor e área totais por ano para cada regional e
-    // município do recorte filtrado. O VBP/ha é calculado sobre a ÁREA TOTAL
-    // declarada (produtos sem área, ex. pecuária, entram no valor mas não na
-    // área). Sem o cubo regional carregado fica null; a aba dispara o
+    // Base da aba VBP/ha: valor total por ano para cada regional e município
+    // do recorte filtrado. O VBP/ha é calculado sobre a ÁREA TERRITORIAL
+    // TOTAL do município (base IBGE, campo areaIbge), não sobre a área
+    // cultivada declarada no VBP; `area` (declarada) segue disponível como
+    // contexto. Sem o cubo regional carregado fica null; a aba dispara o
     // carregamento sob demanda e exibe o estado de loading.
+
+    // Área territorial IBGE por regional = soma dos seus municípios (geoMap).
+    const regionalAreaIbge = {};
+    if (geoMap) {
+      Object.values(geoMap).forEach(meso => {
+        Object.entries(meso.municipios || {}).forEach(([regional, munList]) => {
+          munList.forEach(mun => {
+            const areaHa = MUNICIPIO_AREAS_IBGE[String(mun.cod_ibge).padStart(7, '0')] || 0;
+            regionalAreaIbge[regional] = (regionalAreaIbge[regional] || 0) + areaHa;
+          });
+        });
+      });
+    }
+
     let evolutionRegional = null;
     if (useDetailed) {
       const grouped = {};
       filteredCrossData.forEach(item => {
         const key = `${item.a}|${item.r}`;
         if (!grouped[key]) {
-          grouped[key] = { ano: item.a, regional_idr: item.r, valor: 0, area: 0 };
+          grouped[key] = {
+            ano: item.a, regional_idr: item.r, valor: 0, area: 0,
+            areaIbge: regionalAreaIbge[item.r] || 0,
+          };
         }
         grouped[key].valor += item.v;
         grouped[key].area += item.ar;
@@ -677,7 +699,10 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
         if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return;
         const key = `${item.a}|${item.cod}`;
         if (!grouped[key]) {
-          grouped[key] = { ano: item.a, cod: item.cod, nome: item.m, regional: item.r, valor: 0, area: 0 };
+          grouped[key] = {
+            ano: item.a, cod: item.cod, nome: item.m, regional: item.r, valor: 0, area: 0,
+            areaIbge: MUNICIPIO_AREAS_IBGE[String(item.cod).padStart(7, '0')] || 0,
+          };
         }
         grouped[key].valor += item.v;
         grouped[key].area += item.ar;
@@ -693,7 +718,10 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
         if (targetMesosSet.size > 0 && regionalToMeso[item.r] && !targetMesosSet.has(regionalToMeso[item.r])) return;
         const key = `${item.a}|${item.c}`;
         if (!grouped[key]) {
-          grouped[key] = { ano: item.a, cod: item.c, nome: item.m, regional: item.r, valor: 0, area: 0 };
+          grouped[key] = {
+            ano: item.a, cod: item.c, nome: item.m, regional: item.r, valor: 0, area: 0,
+            areaIbge: MUNICIPIO_AREAS_IBGE[String(item.c).padStart(7, '0')] || 0,
+          };
         }
         grouped[key].valor += item.v;
         grouped[key].area += item.ar;
