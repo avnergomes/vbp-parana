@@ -3,12 +3,17 @@ import { Sprout, ChevronUp, ChevronDown, ArrowUpDown, Search } from 'lucide-reac
 import { formatCurrency, formatNumber } from '../utils/format';
 
 /**
- * Ranking de VBP por hectare (municípios ou regionais).
+ * Ranking ANUAL de VBP por hectare (municípios ou regionais).
  *
- * Metodologia: VBP/ha = VBP total ÷ área total declarada no recorte filtrado.
- * Produtos sem área informada (ex.: pecuária, leite, ovos) entram no valor,
- * mas não na área — por isso a razão usa a área total, e entidades sem área
- * declarada no recorte ficam fora do ranking.
+ * Metodologia: VBP/ha = VBP total ÷ área total declarada NO ANO selecionado
+ * (seletor local; padrão = ano mais recente do recorte). Somar áreas de vários
+ * anos inflaria o denominador além do território real do município — por isso
+ * o ranking é sempre de um único ano. Produtos sem área informada (ex.:
+ * pecuária, leite, ovos) entram no valor, mas não na área; entidades sem área
+ * declarada no ano ficam fora do ranking.
+ *
+ * Fonte: evolutionMunicipio / evolutionRegional (ano × entidade, já com todos
+ * os filtros cruzados aplicados pelo useFilteredData).
  */
 export default function VbpHaRanking({
   data,
@@ -23,17 +28,28 @@ export default function VbpHaRanking({
   const [sortDir, setSortDir] = useState('desc');
   const [search, setSearch] = useState('');
   const [limit, setLimit] = useState(20);
+  const [ano, setAno] = useState(null); // null = ano mais recente disponível
 
   const isMunicipios = type === 'municipios';
 
-  const { items, excluded } = useMemo(() => {
-    if (!data) return { items: [], excluded: 0 };
+  const source = isMunicipios ? data?.evolutionMunicipio : data?.evolutionRegional;
 
-    const source = (isMunicipios ? data.byMunicipio : data.byRegional) || [];
+  const years = useMemo(() => {
+    if (!source?.length) return [];
+    return Array.from(new Set(source.map(item => item.ano))).sort((a, b) => b - a);
+  }, [source]);
+
+  // Se o ano escolhido saiu do recorte (ex.: filtro de período mudou),
+  // cai no mais recente disponível.
+  const effectiveAno = ano !== null && years.includes(ano) ? ano : years[0];
+
+  const { items, excluded } = useMemo(() => {
+    if (!source?.length || effectiveAno == null) return { items: [], excluded: 0 };
 
     const withRatio = source
+      .filter(item => item.ano === effectiveAno)
       .map(item => ({
-        nome: isMunicipios ? (item.nome || item.municipio_oficial) : item.regional_idr,
+        nome: isMunicipios ? item.nome : item.regional_idr,
         regional: isMunicipios ? item.regional : null,
         valor: item.valor,
         area: item.area,
@@ -57,7 +73,7 @@ export default function VbpHaRanking({
     });
 
     return { items: sorted.slice(0, limit), excluded: excludedCount };
-  }, [data, isMunicipios, search, sortField, sortDir, limit]);
+  }, [source, effectiveAno, isMunicipios, search, sortField, sortDir, limit]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -104,7 +120,18 @@ export default function VbpHaRanking({
           </h3>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={effectiveAno ?? ''}
+            onChange={(e) => setAno(parseInt(e.target.value))}
+            className="filter-select w-auto"
+            aria-label="Ano do ranking"
+            disabled={years.length === 0}
+          >
+            {years.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-400" />
             <input
@@ -210,7 +237,7 @@ export default function VbpHaRanking({
       )}
 
       <p className="text-xs text-center text-neutral-500 mt-3">
-        VBP/ha = VBP total ÷ área total declarada no recorte. Produtos sem área informada (ex.: pecuária) entram no valor, mas não na área. Clique em uma linha para filtrar.
+        VBP/ha = VBP total ÷ área total declarada no ano selecionado. Produtos sem área informada (ex.: pecuária) entram no valor, mas não na área. Clique em uma linha para filtrar.
       </p>
     </div>
   );
