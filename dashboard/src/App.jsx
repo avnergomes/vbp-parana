@@ -12,6 +12,8 @@ import RankingTable from './components/RankingTable';
 import MapChart from './components/MapChart';
 import EvolutionChart from './components/EvolutionChart';
 import RegionalChart from './components/RegionalChart';
+import VbpHaRanking from './components/VbpHaRanking';
+import VbpHaEvolution from './components/VbpHaEvolution';
 import Footer from './components/Footer';
 import Loading from './components/Loading';
 // Advanced D3 Charts
@@ -198,7 +200,7 @@ export default function App() {
   const needsDetailedRegional = useMemo(() => {
     const meta = aggregated?.metadata;
     if (!meta) return false;
-    if (activeTab === 'mapa' || activeTab === 'regionais') return true;
+    if (activeTab === 'mapa' || activeTab === 'regionais' || activeTab === 'vbpha') return true;
     const [anoMin, anoMax] = mergedFilters.anos || [];
     const hasYearFilter = anoMin != null && anoMax != null &&
       (anoMin !== meta.anoMin || anoMax !== meta.anoMax);
@@ -456,6 +458,35 @@ export default function App() {
                 selectedMunicipio={interactiveFilters.municipio}
                 isLoading={isMunicipioLoading}
               />
+            </>
+          )}
+
+          {activeTab === 'vbpha' && (
+            <>
+              <VbpHaEvolution
+                data={filteredData}
+                onRegionalClick={handleRegionalClick}
+                onMunicipioClick={handleMunicipioClick}
+                selectedRegional={interactiveFilters.regional}
+                selectedMunicipio={interactiveFilters.municipio}
+                isLoading={isDetailedLoading || isMunicipioLoading}
+              />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <VbpHaRanking
+                  data={filteredData}
+                  type="regionais"
+                  onRegionalClick={handleRegionalClick}
+                  selectedRegional={interactiveFilters.regional}
+                  isLoading={isDetailedLoading}
+                />
+                <VbpHaRanking
+                  data={filteredData}
+                  type="municipios"
+                  onMunicipioClick={handleMunicipioClick}
+                  selectedMunicipio={interactiveFilters.municipio}
+                  isLoading={isDetailedLoading || isMunicipioLoading}
+                />
+              </div>
             </>
           )}
 

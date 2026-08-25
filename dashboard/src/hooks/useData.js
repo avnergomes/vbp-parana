@@ -643,6 +643,64 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       topProdutosAno = aggregated.topProdutosAno;
     }
 
+    // === EVOLUÇÃO VBP/ha (ano × regional e ano × município) ===
+    // Base da aba VBP/ha: valor e área totais por ano para cada regional e
+    // município do recorte filtrado. O VBP/ha é calculado sobre a ÁREA TOTAL
+    // declarada (produtos sem área, ex. pecuária, entram no valor mas não na
+    // área). Sem o cubo regional carregado fica null; a aba dispara o
+    // carregamento sob demanda e exibe o estado de loading.
+    let evolutionRegional = null;
+    if (useDetailed) {
+      const grouped = {};
+      filteredCrossData.forEach(item => {
+        const key = `${item.a}|${item.r}`;
+        if (!grouped[key]) {
+          grouped[key] = { ano: item.a, regional_idr: item.r, valor: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].area += item.ar;
+      });
+      evolutionRegional = Object.values(grouped).sort((a, b) => a.ano - b.ano);
+    }
+
+    let evolutionMunicipio = null;
+    if (municipioReady && (hasProdutoFilterAny || municipios.length > 0)) {
+      // Com filtro de produto/cadeia ou de município, usar o cubo municipal
+      // por produto (mesmos critérios do bloco mapByMunicipio acima).
+      const grouped = {};
+      detailed.byAnoProdutoMunicipio.forEach(item => {
+        if (item.a < anoMin || item.a > anoMax) return;
+        if (hasCadeiaFilter && !cadeias.includes(item.c)) return;
+        if (hasSubcadeiaFilter && !subcadeias.includes(item.s)) return;
+        if (hasProdutoFilter && !produtos.includes(item.n)) return;
+        if (targetMunicipiosSet.size > 0 && !targetMunicipiosSet.has(item.m)) return;
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return;
+        const key = `${item.a}|${item.cod}`;
+        if (!grouped[key]) {
+          grouped[key] = { ano: item.a, cod: item.cod, nome: item.m, regional: item.r, valor: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].area += item.ar;
+      });
+      evolutionMunicipio = Object.values(grouped).sort((a, b) => a.ano - b.ano);
+    } else if (useDetailed) {
+      // Sem filtro de produto: mapData (ano × município) já tem v e ar totais.
+      const grouped = {};
+      detailed.mapData.forEach(item => {
+        if (item.a < anoMin || item.a > anoMax) return;
+        if (targetMunicipiosSet.size > 0 && !targetMunicipiosSet.has(item.m)) return;
+        if (effectiveTargetRegionaisSet.size > 0 && !effectiveTargetRegionaisSet.has(item.r)) return;
+        if (targetMesosSet.size > 0 && regionalToMeso[item.r] && !targetMesosSet.has(regionalToMeso[item.r])) return;
+        const key = `${item.a}|${item.c}`;
+        if (!grouped[key]) {
+          grouped[key] = { ano: item.a, cod: item.c, nome: item.m, regional: item.r, valor: 0, area: 0 };
+        }
+        grouped[key].valor += item.v;
+        grouped[key].area += item.ar;
+      });
+      evolutionMunicipio = Object.values(grouped).sort((a, b) => a.ano - b.ano);
+    }
+
     // Fallback leve por município: quando o cubo municipal ainda não chegou
     // (ou nem foi disparado) e não há filtro ativo, usar aggregated.byMunicipio
     // (~75 KB já baixados no load inicial) remapeado para a convenção dos
@@ -670,6 +728,8 @@ export function useFilteredData(aggregated, detailed, geoMap, filters) {
       byMunicipio: byMunicipioOut,
       byMeso,
       evolutionCadeia,
+      evolutionRegional,
+      evolutionMunicipio,
       topProdutosAno,
       hierarchy,
     };

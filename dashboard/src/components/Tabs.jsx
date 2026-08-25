@@ -1,11 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
-import { BarChart3, Layers, Trophy, Map, Activity, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, Layers, Trophy, Map, Activity, Globe, Sprout, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const tabs = [
   { id: 'overview', label: 'Visão Geral', icon: BarChart3 },
   { id: 'cadeias', label: 'Cadeias', icon: Layers },
   { id: 'produtos', label: 'Produtos', icon: Trophy },
   { id: 'regionais', label: 'Regionais', icon: Globe },
+  { id: 'vbpha', label: 'VBP/ha', icon: Sprout },
   { id: 'evolucao', label: 'Evolução', icon: Activity },
   { id: 'mapa', label: 'Mapa', icon: Map },
 ];
